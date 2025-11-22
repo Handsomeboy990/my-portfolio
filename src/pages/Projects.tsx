@@ -116,7 +116,7 @@ export const Projects: React.FC = () => {
             </div>
             <div className="flex-1 w-full">
                  <div className="aspect-video bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl flex items-center justify-center border border-border shadow-2xl">
-                    <span className="text-2xl font-mono text-white/50">Project Preview</span>
+                    <span className="text-2xl font-mono text-white/50">No preview right now</span>
                  </div>
             </div>
         </div>

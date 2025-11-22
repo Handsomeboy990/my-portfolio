@@ -208,7 +208,7 @@ export const PROJECTS_DATA: Project[] = [
     description: "Complete e-commerce solution with cart management, stripe payment, and admin dashboard.",
     tags: ["TypeScript", "EJS", "Node.js", "MongoDB"],
     imageUrl: "https://picsum.photos/600/400?random=2",
-    repoUrl: "https://github.com/Handsomeboy990/my-shop",
+    repoUrl: "#",
     status: 'completed'
   },
   {
@@ -216,7 +216,7 @@ export const PROJECTS_DATA: Project[] = [
     description: "Administrative panel for data visualization and user management.",
     tags: ["Nest.js", "Tailwind", "JavaScript",],
     imageUrl: "https://media.canva.com/v2/image-resize/format:PNG/height:275/quality:100/uri:ifs%3A%2F%2FM%2F106a5006-2bbb-4833-84d3-44130a2b728d/watermark:F/width:550?csig=AAAAAAAAAAAAAAAAAAAAAHpra9y3LPvt3GGtWfA5m_T897X9IPL4z8TNB-k3bIKG&exp=1763847351&osig=AAAAAAAAAAAAAAAAAAAAAA3geFy-8eg19pljzW3bVBLKnSMd7Uv7XFgdp-NDXHSE&signer=media-rpc&x-canva-quality=thumbnail_large",
-    repoUrl: "https://github.com/Handsomeboy990/dashboard",
+    repoUrl: "#",
     status: 'completed'
   },
   {
@@ -232,7 +232,7 @@ export const PROJECTS_DATA: Project[] = [
     description: "Interactive task management tool inspired by sticky notes.",
     tags: ["JavaScript", "VueJs", "TypeScript"],
     imageUrl: "https://media.canva.com/v2/image-resize/format:PNG/height:276/quality:100/uri:ifs%3A%2F%2FM%2F19d15885-8184-41aa-a162-e59679cc2640/watermark:F/width:550?csig=AAAAAAAAAAAAAAAAAAAAACgOMclQ2cxmkJOD3aLkkc1ErEr0S140vg1opGaH1G7x&exp=1763847953&osig=AAAAAAAAAAAAAAAAAAAAAGwdRUVxgZhMQHSp7M-vqyL3nRe9F3-tLyXa4bUXMFQl&signer=media-rpc&x-canva-quality=thumbnail_large",
-    repoUrl: "https://github.com/Handsomeboy990/post-it",
+    repoUrl: "#",
     status: 'completed'
   },
   {
@@ -240,7 +240,7 @@ export const PROJECTS_DATA: Project[] = [
     description: "Project management clone (Trello-like) with drag-and-drop capabilities.",
     tags: ["TypeScript", "NestJS", "PostgreSQL"],
     imageUrl: "https://picsum.photos/600/400?random=6",
-    repoUrl: "https://github.com/Handsomeboy990/trelltech",
+    repoUrl: "#",
     status: 'completed'
   }
 ];
@@ -249,7 +249,7 @@ export const ZEMI_PROJECT: Project = {
   title: "Zémi",
   description: "Platform aimed at revolutionizing shared transport in urban environments.",
   tags: ["NextJs", "Supabase", "TypeScript"],
-  imageUrl: "https://picsum.photos/600/400?random=7",
-  repoUrl: "https://github.com/Handsomeboy990/zemi",
+  imageUrl: "https://media.canva.com/v2/image-resize/format:PNG/height:235/quality:100/uri:ifs%3A%2F%2FM%2Fb649c5d2-9108-45f3-a084-b3c12df20858/watermark:F/width:550?csig=AAAAAAAAAAAAAAAAAAAAAN7uNIL4K65zhGqpHpi5_8ubwF6T7jAGrwBNI1hcKiNa&exp=1763848115&osig=AAAAAAAAAAAAAAAAAAAAABqvD1Oey5YwPz_77ojltRRq7vvoumF6cmLCycFWZlDD&signer=media-rpc&x-canva-quality=thumbnail_large",
+  repoUrl: "#",
   status: 'in-progress'
 };
