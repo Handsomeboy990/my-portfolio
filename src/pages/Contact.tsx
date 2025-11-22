@@ -86,30 +86,30 @@ export const Contact: React.FC = () => {
     setErrorMessage(null);
 
     try {
-      // Simulate API Call (Replace with actual Resend/Nodemailer fetch call)
-      await new Promise<void>((resolve, reject) => {
-        setTimeout(() => {
-          // Simulate a random network error for demonstration (10% chance)
-          // In production, remove this random failure logic.
-          const randomFail = Math.random() < 0.05; 
-          if (randomFail) {
-             reject(new Error("Network Error"));
-          } else {
-             resolve();
-          }
-        }, 1500);
+      // API Call
+      const response = await fetch("/api/send-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData)
       });
+      console.log("response : ", response);
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({ error: 'Unknown' }));
+        throw new Error(err?.error || 'Failed to send');
+      }    
 
       setStatus('success');
       setFormData({ name: '', email: '', message: '' });
       setErrors({});
-    } catch (error) {
+    } catch (error: any) {
       setStatus('error');
       setErrorMessage(
         language === 'fr' 
           ? "Une erreur est survenue lors de l'envoi du message. Veuillez réessayer." 
           : "An error occurred while sending the message. Please try again."
       );
+      console.error("Contact send error", error);
     }
   };
 
