@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lauret CHACHA | Portfolio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+            },
+            colors: {
+              border: "hsl(var(--border))",
+              input: "hsl(var(--input))",
+              ring: "hsl(var(--ring))",
+              background: "hsl(var(--background))",
+              foreground: "hsl(var(--foreground))",
+              primary: {
+                DEFAULT: "hsl(var(--primary))",
+                foreground: "hsl(var(--primary-foreground))",
+              },
+              secondary: {
+                DEFAULT: "hsl(var(--secondary))",
+                foreground: "hsl(var(--secondary-foreground))",
+              },
+              muted: {
+                DEFAULT: "hsl(var(--muted))",
+                foreground: "hsl(var(--muted-foreground))",
+              },
+              accent: {
+                DEFAULT: "hsl(var(--accent))",
+                foreground: "hsl(var(--accent-foreground))",
+              },
+            },
+          }
+        }
+      }
+    </script>
+    <style>
+      :root {
+        /* Light Mode */
+        --background: 210 20% 98%;
+        --foreground: 222 14% 12%;
+
+        --card: 210 20% 98%;
+        --card-foreground: 222 14% 12%;
+
+        --popover: 210 20% 98%;
+        --popover-foreground: 222 14% 12%;
+
+        --primary: 222 89% 55%;
+        --primary-foreground: 0 0% 98%;
+
+        --secondary: 210 20% 92%;
+        --secondary-foreground: 222 15% 15%;
+
+        --muted: 210 15% 90%;
+        --muted-foreground: 222 10% 45%;
+
+        --accent: 222 89% 65%;
+        --accent-foreground: 0 0% 98%;
+
+        --destructive: 0 84% 60%;
+        --destructive-foreground: 0 0% 98%;
+
+        --border: 210 15% 85%;
+        --input: 210 15% 85%;
+        --ring: 222 89% 55%;
+
+        --radius: 0.5rem;
+      }
+
+      .dark {
+        /* Dark Mode */
+        --background: 222 25% 8%;
+        --foreground: 210 20% 98%;
+
+        --card: 222 25% 8%;
+        --card-foreground: 210 20% 98%;
+
+        --popover: 222 25% 8%;
+        --popover-foreground: 210 20% 98%;
+
+        --primary: 222 89% 68%;
+        --primary-foreground: 222 25% 10%;
+
+        --secondary: 222 15% 15%;
+        --secondary-foreground: 0 0% 98%;
+
+        --muted: 222 12% 16%;
+        --muted-foreground: 222 10% 60%;
+
+        --accent: 222 89% 75%;
+        --accent-foreground: 222 25% 10%;
+
+        --destructive: 0 62% 30%;
+        --destructive-foreground: 0 0% 98%;
+
+        --border: 222 10% 18%;
+        --input: 222 10% 18%;
+        --ring: 222 89% 68%;
+      }
+    </style>
+
+  <script type="importmap">
+{
+  "imports": {
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.554.0",
+    "react-router-dom": "https://aistudiocdn.com/react-router-dom@^7.9.6",
+    "framer-motion": "https://aistudiocdn.com/framer-motion@^12.23.24"
+  }
+}
+</script>
+<link rel="stylesheet" href="src/index.css">
+</head>
+  <body class="antialiased bg-background text-foreground transition-colors duration-300">
+    <div id="root"></div>
+  <script type="module" src="src/index.tsx"></script>
+</body>
+</html>
