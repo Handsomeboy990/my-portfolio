@@ -215,7 +215,7 @@ export const PROJECTS_DATA: Project[] = [
     title: "Dashboard",
     description: "Administrative panel for data visualization and user management.",
     tags: ["Nest.js", "Tailwind", "JavaScript",],
-    imageUrl: "https://raw.githubusercontent.com/EpitechCodingAcademyPromo2026/C-COD-280-COT-2-1-dashboard-6/main/docs/screenshots/dashboard_profile.png?token=GHSAT0AAAAAADJPUNZRTA3EUUH27Z4KI4MY2JB3VLA",
+    imageUrl: "https://media.canva.com/v2/image-resize/format:PNG/height:275/quality:100/uri:ifs%3A%2F%2FM%2F106a5006-2bbb-4833-84d3-44130a2b728d/watermark:F/width:550?csig=AAAAAAAAAAAAAAAAAAAAAHpra9y3LPvt3GGtWfA5m_T897X9IPL4z8TNB-k3bIKG&exp=1763847351&osig=AAAAAAAAAAAAAAAAAAAAAA3geFy-8eg19pljzW3bVBLKnSMd7Uv7XFgdp-NDXHSE&signer=media-rpc&x-canva-quality=thumbnail_large",
     repoUrl: "https://github.com/Handsomeboy990/dashboard",
     status: 'completed'
   },
@@ -231,7 +231,7 @@ export const PROJECTS_DATA: Project[] = [
     title: "TaskIT",
     description: "Interactive task management tool inspired by sticky notes.",
     tags: ["JavaScript", "VueJs", "TypeScript"],
-    imageUrl: "https://raw.githubusercontent.com/EpitechCodingAcademyPromo2025/C-DEV-121-COT-1-1-twp-leroi.kakatsi/main/docs/screenshots/home.png?token=GHSAT0AAAAAADJPUNZRCBIBVW5PSF4RE64Q2JB37RA",
+    imageUrl: "https://media.canva.com/v2/image-resize/format:PNG/height:276/quality:100/uri:ifs%3A%2F%2FM%2F19d15885-8184-41aa-a162-e59679cc2640/watermark:F/width:550?csig=AAAAAAAAAAAAAAAAAAAAACgOMclQ2cxmkJOD3aLkkc1ErEr0S140vg1opGaH1G7x&exp=1763847953&osig=AAAAAAAAAAAAAAAAAAAAAGwdRUVxgZhMQHSp7M-vqyL3nRe9F3-tLyXa4bUXMFQl&signer=media-rpc&x-canva-quality=thumbnail_large",
     repoUrl: "https://github.com/Handsomeboy990/post-it",
     status: 'completed'
   },
