@@ -53,7 +53,7 @@ export const Projects: React.FC = () => {
                 <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                     <a href={project.repoUrl} target="_blank" rel="noreferrer">
                         <Button size="sm" variant="secondary" className="gap-2">
-                            <Github className="h-4 w-4" /> Code
+                            <ExternalLink className="h-4 w-4" /> Go to
                         </Button>
                     </a>
                     {project.demoUrl && (
@@ -116,7 +116,12 @@ export const Projects: React.FC = () => {
             </div>
             <div className="flex-1 w-full">
                  <div className="aspect-video bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl flex items-center justify-center border border-border shadow-2xl">
-                    <span className="text-2xl font-mono text-white/50">No preview right now</span>
+                    {/* <span className="text-2xl font-mono text-white/50">No preview right now</span> */}
+                        <img 
+                        src={ZEMI_PROJECT.imageUrl} 
+                        alt={ZEMI_PROJECT.title} 
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
                  </div>
             </div>
         </div>

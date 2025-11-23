@@ -5,6 +5,10 @@ import {
   Search, Brain, HeartPulse 
 } from 'lucide-react';
 import React from 'react';
+import Dash from '@/src/assets/dashboard.png';
+import Taskit from '@/src/assets/taskit.png';
+import Rotten from '@/src/assets/rotten.png';
+import Zemi from '@/src/assets/zemi.png'
 
 export const TRANSLATIONS: Record<'fr' | 'en', Content> = {
   fr: {
@@ -215,15 +219,15 @@ export const PROJECTS_DATA: Project[] = [
     title: "Dashboard",
     description: "Administrative panel for data visualization and user management.",
     tags: ["Nest.js", "Tailwind", "JavaScript",],
-    imageUrl: "https://media.canva.com/v2/image-resize/format:PNG/height:275/quality:100/uri:ifs%3A%2F%2FM%2F106a5006-2bbb-4833-84d3-44130a2b728d/watermark:F/width:550?csig=AAAAAAAAAAAAAAAAAAAAAHpra9y3LPvt3GGtWfA5m_T897X9IPL4z8TNB-k3bIKG&exp=1763847351&osig=AAAAAAAAAAAAAAAAAAAAAA3geFy-8eg19pljzW3bVBLKnSMd7Uv7XFgdp-NDXHSE&signer=media-rpc&x-canva-quality=thumbnail_large",
-    repoUrl: "#",
+    imageUrl: `${Dash}`,
+    repoUrl: "https://royal-dash.netlify.app",
     status: 'completed'
   },
   {
     title: "My Rotten Tomatoes",
     description: "Movie rating application utilizing external movie database APIs.",
     tags: ["NextJs", "API"],
-    imageUrl: "https://media.canva.com/v2/image-resize/format:PNG/height:286/quality:100/uri:ifs%3A%2F%2FM%2F80bb5a64-6964-45fe-b21d-579ed43a2c0f/watermark:F/width:550?csig=AAAAAAAAAAAAAAAAAAAAAAqqvIH2RTmIH7RS3BUAtritnPW4WX7jzYl3IOQEwegk&exp=1763839160&osig=AAAAAAAAAAAAAAAAAAAAAGLoCWTWHCh2qGIXZjc1YXU2ame3zsB0Vtt7hNMpprtR&signer=media-rpc&x-canva-quality=thumbnail_large",
+    imageUrl: `${Rotten}`,
     repoUrl: "https://rotten2.vercel.app/",
     status: 'completed'
   },
@@ -231,7 +235,7 @@ export const PROJECTS_DATA: Project[] = [
     title: "TaskIT",
     description: "Interactive task management tool inspired by sticky notes.",
     tags: ["JavaScript", "VueJs", "TypeScript"],
-    imageUrl: "https://media.canva.com/v2/image-resize/format:PNG/height:276/quality:100/uri:ifs%3A%2F%2FM%2F19d15885-8184-41aa-a162-e59679cc2640/watermark:F/width:550?csig=AAAAAAAAAAAAAAAAAAAAACgOMclQ2cxmkJOD3aLkkc1ErEr0S140vg1opGaH1G7x&exp=1763847953&osig=AAAAAAAAAAAAAAAAAAAAAGwdRUVxgZhMQHSp7M-vqyL3nRe9F3-tLyXa4bUXMFQl&signer=media-rpc&x-canva-quality=thumbnail_large",
+    imageUrl: `${Taskit}`,
     repoUrl: "#",
     status: 'completed'
   },
@@ -248,8 +252,7 @@ export const PROJECTS_DATA: Project[] = [
 export const ZEMI_PROJECT: Project = {
   title: "Zémi",
   description: "Platform aimed at revolutionizing shared transport in urban environments.",
-  tags: ["NextJs", "Supabase", "TypeScript"],
-  imageUrl: "https://media.canva.com/v2/image-resize/format:PNG/height:235/quality:100/uri:ifs%3A%2F%2FM%2Fb649c5d2-9108-45f3-a084-b3c12df20858/watermark:F/width:550?csig=AAAAAAAAAAAAAAAAAAAAAN7uNIL4K65zhGqpHpi5_8ubwF6T7jAGrwBNI1hcKiNa&exp=1763848115&osig=AAAAAAAAAAAAAAAAAAAAABqvD1Oey5YwPz_77ojltRRq7vvoumF6cmLCycFWZlDD&signer=media-rpc&x-canva-quality=thumbnail_large",
-  repoUrl: "#",
+  tags: ["NextJs", "MongoDB", "TypeScript"],
+  imageUrl: `${Zemi}`,
   status: 'in-progress'
 };
