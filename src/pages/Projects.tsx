@@ -7,7 +7,7 @@ import { PROJECTS_DATA, ZEMI_PROJECT } from '../constants';
 import { Github, ExternalLink, Layers, Rocket } from 'lucide-react';
 
 export const Projects: React.FC = () => {
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
 
   const pageVariants = {
     initial: { opacity: 0 },
@@ -93,14 +93,14 @@ export const Projects: React.FC = () => {
                     <div className="flex gap-3 items-start">
                         <Layers className="h-5 w-5 mt-1 text-primary" />
                         <div>
-                            <h4 className="font-semibold">Features</h4>
+                            <h4 className="font-semibold">{language === 'fr' ? 'Fonctionnalités' : 'Features'}</h4>
                             <p className="text-sm text-muted-foreground">{t.projects.zemi_features}</p>
                         </div>
                     </div>
                     <div className="flex gap-3 items-start">
                         <Rocket className="h-5 w-5 mt-1 text-primary" />
                         <div>
-                            <h4 className="font-semibold">Roadmap</h4>
+                            <h4 className="font-semibold">{language === 'fr' ? 'Feuille de route' : 'Roadmap'}</h4>
                             <p className="text-sm text-muted-foreground">{t.projects.zemi_roadmap}</p>
                         </div>
                     </div>

@@ -254,5 +254,6 @@ export const ZEMI_PROJECT: Project = {
   description: "Platform aimed at revolutionizing shared transport in urban environments.",
   tags: ["NextJs", "MongoDB", "TypeScript"],
   imageUrl: `${Zemi}`,
+  repoUrl: "#",
   status: 'in-progress'
 };
