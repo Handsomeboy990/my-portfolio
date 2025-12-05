@@ -12,7 +12,7 @@ export const SEO: React.FC<SEOProps> = ({ title, description, image }) => {
   const url = window.location.origin + location.pathname;
   
   // Defaults based on metadata.json
-  const defaultName = "Portfolio Lauret CHACHA";
+  const defaultName = "Lauret CHACHA";
   const defaultDesc = "Portfolio professionnel de Lauret CHACHA, Développeur Full Stack. Multilingue, Dark Mode, Design Premium.";
   const defaultImage = 'https://picsum.photos/1200/630'; // Placeholder image for social cards
 
