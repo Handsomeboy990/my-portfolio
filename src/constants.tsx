@@ -12,6 +12,7 @@ import Zemi from '@/src/assets/zemi.png';
 import FlowTicket from '@/src/assets/flowticket.png';
 import Yowl from '@/src/assets/yowl.png';
 import Trell from '@/src/assets/trell.png';
+import Postman from '@/src/assets/documents/certification_postman.pdf';
 
 export const TRANSLATIONS: Record<'fr' | 'en', Content> = {
   fr: {
@@ -188,16 +189,19 @@ export const EDUCATIONS: Education[] = [
     year: "2026",
     degree: "Full Stack Developer Certification",
     school: "Epitech (Coding Academy)",
+    url: "",
   },
-  // {
-  //   year: "2025",
-  //   degree: "Full Stack Developer Certification",
-  //   school: "Epitech (Coding Academy)",
-  // },
+  {
+    year: "2025",
+    degree: "Postman API Fundamentals Student Expert",
+    school: "Postman",
+    url: `${Postman},`
+  },
   {
     year: "2023",
     degree: "Bachelor's Degree in Biochemical and Biomedical Technologies",
     school: "FOPASE Higher Institute",
+    url: "",
   }
 ];
 

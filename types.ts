@@ -18,6 +18,7 @@ export interface Education {
   year: string;
   degree: string;
   school: string;
+  url: string;
 }
 
 export interface Skill {
