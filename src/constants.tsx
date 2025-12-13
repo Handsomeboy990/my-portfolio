@@ -8,7 +8,9 @@ import React from 'react';
 import Dash from '@/src/assets/dashboard.png';
 import Taskit from '@/src/assets/taskit.png';
 import Rotten from '@/src/assets/rotten.png';
-import Zemi from '@/src/assets/zemi.png'
+import Zemi from '@/src/assets/zemi.png';
+import FlowTicket from '@/src/assets/flowticket.png';
+import Yowl from '@/src/assets/yowl.png';
 
 export const TRANSLATIONS: Record<'fr' | 'en', Content> = {
   fr: {
@@ -203,16 +205,16 @@ export const PROJECTS_DATA: Project[] = [
     title: "YOWL",
     description: "A content aggregation platform allowing users to comment and rate content, similar to Reddit.",
     tags: ["VueJs", "Laravel", "MySQL"],
-    imageUrl: "https://picsum.photos/600/400?random=1",
-    repoUrl: "https://yowl-community.netlify.app/",
+    imageUrl: `*${Yowl}`,
+    repoUrl: "https://github.com/Handsomeboy990/YOWL_COMMUNITY",
     status: 'completed'
   },
   {
     title: "FlowTIckets",
     description: "Complete e-commerce solution with cart management, stripe payment, and admin dashboard.",
     tags: ["TypeScript", "EJS", "Node.js", "MongoDB"],
-    imageUrl: "https://picsum.photos/600/400?random=2",
-    repoUrl: "#",
+    imageUrl: `${FlowTicket}`,
+    repoUrl: "https://github.com/Handsomeboy990/FlowTickets",
     status: 'completed'
   },
   {
@@ -236,7 +238,7 @@ export const PROJECTS_DATA: Project[] = [
     description: "Interactive task management tool inspired by sticky notes.",
     tags: ["JavaScript", "VueJs", "TypeScript"],
     imageUrl: `${Taskit}`,
-    repoUrl: "#",
+    repoUrl: "https://github.com/Handsomeboy990/TaskIt",
     status: 'completed'
   },
   {
@@ -244,7 +246,7 @@ export const PROJECTS_DATA: Project[] = [
     description: "Project management clone (Trello-like) with drag-and-drop capabilities.",
     tags: ["TypeScript", "NestJS", "PostgreSQL"],
     imageUrl: "https://picsum.photos/600/400?random=6",
-    repoUrl: "#",
+    repoUrl: "https://github.com/Handsomeboy990/trellTech",
     status: 'completed'
   }
 ];
