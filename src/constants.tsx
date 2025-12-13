@@ -11,6 +11,7 @@ import Rotten from '@/src/assets/rotten.png';
 import Zemi from '@/src/assets/zemi.png';
 import FlowTicket from '@/src/assets/flowticket.png';
 import Yowl from '@/src/assets/yowl.png';
+import Trell from '@/src/assets/trell.png';
 
 export const TRANSLATIONS: Record<'fr' | 'en', Content> = {
   fr: {
@@ -205,7 +206,7 @@ export const PROJECTS_DATA: Project[] = [
     title: "YOWL",
     description: "A content aggregation platform allowing users to comment and rate content, similar to Reddit.",
     tags: ["VueJs", "Laravel", "MySQL"],
-    imageUrl: `*${Yowl}`,
+    imageUrl: `${Yowl}`,
     repoUrl: "https://github.com/Handsomeboy990/YOWL_COMMUNITY",
     status: 'completed'
   },
@@ -245,7 +246,7 @@ export const PROJECTS_DATA: Project[] = [
     title: "TrellTech",
     description: "Project management clone (Trello-like) with drag-and-drop capabilities.",
     tags: ["TypeScript", "NestJS", "PostgreSQL"],
-    imageUrl: "https://picsum.photos/600/400?random=6",
+    imageUrl: `${Trell}`,
     repoUrl: "https://github.com/Handsomeboy990/trellTech",
     status: 'completed'
   }
