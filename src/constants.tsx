@@ -11,7 +11,7 @@ import Rotten from '@/src/assets/rotten.png';
 import Zemi from '@/src/assets/zemi.png';
 import FlowTicket from '@/src/assets/flowticket.png';
 import Yowl from '@/src/assets/yowl.png';
-import Trell from '@/src/assets/trell.png';
+import Domoo from '@/src/assets/domoo.png';
 import Postman from '@/src/assets/documents/certification_postman.pdf';
 
 export const TRANSLATIONS: Record<'fr' | 'en', Content> = {
@@ -247,11 +247,11 @@ export const PROJECTS_DATA: Project[] = [
     status: 'completed'
   },
   {
-    title: "TrellTech",
-    description: "Project management clone (Trello-like) with drag-and-drop capabilities.",
-    tags: ["TypeScript", "NestJS", "PostgreSQL"],
-    imageUrl: `${Trell}`,
-    repoUrl: "https://github.com/Handsomeboy990/trellTech",
+    title: "Domoo",
+    description: "Complete Next.js application for real estate property management with payment tracking, user management, and automated notifications.",
+    tags: ["JavaScript", "NestJS", "MongoDB"],
+    imageUrl: `${Domoo}`,
+    repoUrl: "https://domoo.vercel.app/",
     status: 'completed'
   }
 ];
