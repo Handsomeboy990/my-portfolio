@@ -7,8 +7,9 @@ import { Footer } from './components/Footer';
 import { Home } from './pages/Home';
 import { Projects } from './pages/Projects';
 import { Contact } from './pages/Contact';
+import { Admin } from './pages/Admin';
 import { AnimatePresence } from 'framer-motion';
-
+import { Analytics } from "@vercel/analytics/next";
 const ScrollToTop = () => {
   const { pathname } = useLocation();
   React.useEffect(() => {
@@ -25,8 +26,24 @@ const AnimatedRoutes = () => {
         <Route path="/" element={<Home />} />
         <Route path="/projects" element={<Projects />} />
         <Route path="/contact" element={<Contact />} />
+        <Route path="/admin" element={<Admin />} />
       </Routes>
     </AnimatePresence>
+  );
+};
+
+const AppShell: React.FC = () => {
+  const location = useLocation();
+  const isAdminRoute = location.pathname === '/admin';
+
+  return (
+    <>
+      {!isAdminRoute && <Navbar />}
+      <main className="flex-grow">
+        <AnimatedRoutes />
+      </main>
+      {!isAdminRoute && <Footer />}
+    </>
   );
 };
 
@@ -38,11 +55,7 @@ function App() {
         <div className="min-h-screen flex flex-col font-sans antialiased bg-background text-foreground transition-colors duration-300">
           <Router>
             <ScrollToTop />
-            <Navbar />
-            <main className="flex-grow">
-              <AnimatedRoutes />
-            </main>
-            <Footer />
+            <AppShell />
           </Router>
         </div>
       </LanguageProvider>

@@ -1,9 +1,9 @@
 export const config = {
-    api: {
-      bodyParser: true,
-    },
-  };
-  
+  api: {
+    bodyParser: true,
+  },
+};
+
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Resend } from 'resend';
 
@@ -26,7 +26,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const data = await resend.emails.send({
       from: `${name} <${email}>`, // DYNAMIQUE
-      to: ["contact@lauret.dev"], 
+      to: ["lauret.chacha@epitech.eu"],
       subject: "Nouveau message depuis le portfolio",
       html: `
         <h2>Nouveau message depuis ton portfolio</h2>

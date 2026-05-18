@@ -24,24 +24,24 @@ export const Navbar: React.FC = () => {
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4 md:px-8 h-16 flex items-center justify-between">
         {/* Logo */}
-        <Link to="/" className="text-xl font-bold tracking-tight hover:opacity-80 transition-opacity">
+        <Link to="/" className="text-xl font-bold tracking-tight hover:opacity-75 transition-opacity duration-200">
           Lauret<span className="text-primary">.Dev</span>
         </Link>
 
         {/* Desktop Nav */}
         <nav className="hidden md:flex items-center gap-6">
           {links.map((link) => (
-            <Link 
-              key={link.path} 
+            <Link
+              key={link.path}
               to={link.path}
-              className={`text-sm font-medium transition-colors hover:text-primary ${
+              className={`text-sm font-medium transition-colors duration-200 hover:text-primary ${
                 location.pathname === link.path ? "text-primary" : "text-muted-foreground"
               }`}
             >
               {link.name}
             </Link>
           ))}
-          
+
           <div className="flex items-center gap-2 ml-4 border-l pl-4 border-border">
             <Button variant="ghost" size="sm" onClick={toggleTheme}>
               {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
@@ -53,8 +53,8 @@ export const Navbar: React.FC = () => {
         </nav>
 
         {/* Mobile Toggle */}
-        <button className="md:hidden p-2" onClick={() => setIsOpen(!isOpen)}>
-          {isOpen ? <X /> : <Menu />}
+        <button className="md:hidden p-2 hover:bg-secondary/50 rounded-md transition-colors duration-200" onClick={() => setIsOpen(!isOpen)}>
+          {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
       </div>
 
