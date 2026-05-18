@@ -292,6 +292,16 @@ const formatTimestampForUI = (value: string | null | undefined): string => {
   }
 };
 
+const formatSaveError = (message: string): string => {
+  const lowerMessage = message.toLowerCase();
+
+  if (lowerMessage.includes('row-level security') || lowerMessage.includes('violates row-level security') || lowerMessage.includes('rls')) {
+    return 'Enregistrement refusé par Supabase: les politiques RLS bloquent cette écriture. Vérifie que le compte admin a bien les politiques INSERT/UPDATE/DELETE sur profile, experiences, educations, projects et site_settings.';
+  }
+
+  return message;
+};
+
 const parseCvPaths = (value: string | null): { fr: string; en: string } => {
   if (!value) {
     return { fr: '', en: '' };
@@ -693,13 +703,39 @@ export const Admin: React.FC = () => {
     const settingsPayload = buildSettingsPayload(currentDraft);
 
     const profileRow = await supabase.from('profile').select('id').limit(1).maybeSingle();
-    if (profileRow.error) throw new Error(profileRow.error.message);
+    if (profileRow.error) {
+      console.error('profileRow error', profileRow.error);
+      throw new Error(profileRow.error.message);
+    }
+
+    // Log current authenticated user to help diagnose RLS denials
+    try {
+      // supabase.auth.getUser() returns { data, error }
+      // we keep this log short-lived and helpful for debugging
+      const userResp = await supabase.auth.getUser();
+      // eslint-disable-next-line no-console
+      console.info('supabase user', userResp?.data?.user ? { email: userResp.data.user.email, id: userResp.data.user.id } : null);
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.warn('could not get supabase user', e);
+    }
+
     if (profileRow.data && profileRow.data.id) {
       const profileUpdate = await supabase.from('profile').update(profilePayload).eq('id', profileRow.data.id);
-      if (profileUpdate.error) throw new Error(profileUpdate.error.message);
+      if (profileUpdate.error) {
+        // log full error object for diagnosis
+        // eslint-disable-next-line no-console
+        console.error('profile.update error', profileUpdate.error);
+        throw new Error(profileUpdate.error.message);
+      }
     } else {
       const profileInsert = await supabase.from('profile').insert(profilePayload);
-      if (profileInsert.error) throw new Error(profileInsert.error.message);
+      if (profileInsert.error) {
+        // log full error object for diagnosis
+        // eslint-disable-next-line no-console
+        console.error('profile.insert error', profileInsert.error);
+        throw new Error(profileInsert.error.message);
+      }
     }
 
     const settingsRow = await supabase.from('site_settings').select('id').limit(1).maybeSingle();
@@ -903,7 +939,7 @@ export const Admin: React.FC = () => {
       setLastSavedAt(timestamp);
       setSaveMessage('Données synchronisées.');
     } catch (error) {
-      setSaveError(error instanceof Error ? error.message : 'Erreur lors de la synchronisation');
+      setSaveError(error instanceof Error ? formatSaveError(error.message) : 'Erreur lors de la synchronisation');
     } finally {
       setSaveLoading(false);
     }

@@ -18,7 +18,7 @@ import { Link } from 'react-router-dom';
 import { loadPublicContent, PublicContentState } from '../lib/publicContent';
 
 export const Home: React.FC = () => {
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
   const [publicContent, setPublicContent] = React.useState<PublicContentState | null>(null);
 
   const pageVariants = {
@@ -54,7 +54,7 @@ export const Home: React.FC = () => {
   React.useEffect(() => {
     let isMounted = true;
 
-    loadPublicContent('fr').then((content) => {
+    loadPublicContent(language).then((content) => {
       if (isMounted) {
         setPublicContent(content);
       }
@@ -63,7 +63,7 @@ export const Home: React.FC = () => {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [language]);
 
   const heroTitle = publicContent?.hero.title || t.hero.title;
   const heroSubtitle = publicContent?.hero.subtitle || t.hero.subtitle;

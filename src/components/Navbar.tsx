@@ -5,12 +5,30 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Button } from './ui/Button';
 import { motion, AnimatePresence } from 'framer-motion';
+import { loadPublicContent, PublicContentState } from '../lib/publicContent';
 
 export const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [publicContent, setPublicContent] = useState<PublicContentState | null>(null);
   const { theme, toggleTheme } = useTheme();
   const { language, setLanguage, t } = useLanguage();
   const location = useLocation();
+
+  React.useEffect(() => {
+    let isMounted = true;
+
+    loadPublicContent(language).then((content) => {
+      if (isMounted) {
+        setPublicContent(content);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [language]);
+
+  const brandName = publicContent?.siteName || publicContent?.hero.title || 'Lauret CHACHA';
 
   const links = [
     { name: t.nav.about, path: "/" },
@@ -25,7 +43,7 @@ export const Navbar: React.FC = () => {
       <div className="container mx-auto px-4 md:px-8 h-16 flex items-center justify-between">
         {/* Logo */}
         <Link to="/" className="text-xl font-bold tracking-tight hover:opacity-75 transition-opacity duration-200">
-          Lauret<span className="text-primary">.Dev</span>
+          {brandName}
         </Link>
 
         {/* Desktop Nav */}

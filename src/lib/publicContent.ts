@@ -59,6 +59,7 @@ type SiteSettingsRow = {
 
 export type PublicContentState = {
     loaded: boolean;
+    siteName: string;
     hero: {
         title: string;
         subtitle: string;
@@ -116,9 +117,9 @@ const mapProfile = (row: ProfileRow | null, fallbackTitle: string, fallbackSubti
     const cvPaths = parseCvPaths(row?.cv_path || null);
 
     return {
-    title: row?.title || fallbackTitle,
-    subtitle: row?.subtitle || fallbackSubtitle,
-    cvUrl: language === 'fr' ? cvPaths.fr : cvPaths.en || cvPaths.fr,
+        title: row?.title || fallbackTitle,
+        subtitle: row?.subtitle || fallbackSubtitle,
+        cvUrl: language === 'fr' ? cvPaths.fr : cvPaths.en || cvPaths.fr,
     };
 };
 
@@ -188,6 +189,7 @@ export const loadPublicContent = async (language: Language) => {
     if (!hasSupabaseConfig || !supabase) {
         return {
             loaded: true,
+            siteName: fallback.hero.title,
             hero: {
                 title: fallback.hero.title,
                 subtitle: fallback.hero.subtitle,
@@ -216,6 +218,7 @@ export const loadPublicContent = async (language: Language) => {
 
     return {
         loaded: true,
+        siteName: settingsRow?.site_name || profileRow?.title || fallbackHero.title,
         hero: {
             title: settingsRow?.hero_title || profileRow?.title || fallbackHero.title,
             subtitle: settingsRow?.hero_subtitle || profileRow?.subtitle || fallbackHero.subtitle,
