@@ -9,7 +9,7 @@ import { Projects } from './pages/Projects';
 import { Contact } from './pages/Contact';
 import { Admin } from './pages/Admin';
 import { AnimatePresence } from 'framer-motion';
-import { Analytics } from "@vercel/analytics/next";
+import { Analytics } from '@vercel/analytics/react';
 const ScrollToTop = () => {
   const { pathname } = useLocation();
   React.useEffect(() => {
@@ -57,6 +57,7 @@ function App() {
             <ScrollToTop />
             <AppShell />
           </Router>
+          <Analytics />
         </div>
       </LanguageProvider>
     </ThemeProvider>
