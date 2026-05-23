@@ -1494,6 +1494,11 @@ export const Admin: React.FC = () => {
 
             {activeSection === 'experience' && (
               <SectionPanel title="Expériences" description="Liste des expériences professionnelles affichées sur le site public." icon={BriefcaseBusiness}>
+                <div className="mb-4 flex justify-end">
+                  <Button variant="outline" className="gap-2" onClick={addExperience}>
+                    <Plus className="h-4 w-4" /> Ajouter une expérience
+                  </Button>
+                </div>
                 <div className="space-y-4">
                   {draft.experience.map((item, index) => (
                     <div
