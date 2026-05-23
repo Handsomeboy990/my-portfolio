@@ -787,19 +787,19 @@ export const Admin: React.FC = () => {
     role: emptyI18nText(),
     period: '',
     description: emptyI18nText(),
-    isPublished: false,
+    isPublished: true,
   });
 
   const createEmptyEducation = (): EducationDraft => ({
     school: '',
     diploma: emptyI18nText(),
     period: '',
-    isPublished: false,
+    isPublished: true,
   });
 
   const createEmptyProject = (): ProjectDraft => ({
     title: '',
-    status: 'Brouillon',
+    status: 'Publié',
     stack: '',
     summary: emptyI18nText(),
     coverPath: '',
