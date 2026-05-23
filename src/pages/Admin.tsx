@@ -1013,20 +1013,19 @@ export const Admin: React.FC = () => {
       if (deleteResult.error) throw new Error(`[educations:delete] ${deleteResult.error.message}`);
     }
 
-    const projectsPayload = currentDraft.projects.map((item, index) => {
-      const summarySerialized = serializeI18nText(item.summary);
-      return {
-        title: item.title,
-        slug: slugify(item.title),
-        summary: summarySerialized,
-        content: summarySerialized,
-        cover_path: item.coverPath || null,
-        project_url: item.projectUrl || null,
-        repository_url: item.repositoryUrl || null,
-        stack: item.stack,
-        sort_order: index,
-        is_published: isDraftPublished(item.status),
-      };
+    const projectsExisting = await supabase.from('projects').select('id');
+    if (projectsExisting.error) throw new Error(`[projects:select] ${projectsExisting.error.message}`);
+    const existingProjectIds = new Set(((projectsExisting.data || []) as Array<{ id: string }>).map((row) => row.id));
+    const draftProjectIds = new Set(currentDraft.projects.map((item) => item.id).filter((id): id is string => Boolean(id)));
+    const projectIdsToDelete = [...existingProjectIds].filter((id) => !draftProjectIds.has(id));
+
+    const slugCounts = new Map<string, number>();
+    const finalSlugs = currentDraft.projects.map((item) => {
+      const base = slugify(item.title.trim());
+      if (!base) return null;
+      const count = slugCounts.get(base) || 0;
+      slugCounts.set(base, count + 1);
+      return count === 0 ? base : `${base}-${count + 1}`;
     });
 
     const uploadedCoverPaths = await Promise.all(
@@ -1037,7 +1036,8 @@ export const Admin: React.FC = () => {
         }
 
         const extension = selectedFile.name.includes('.') ? selectedFile.name.split('.').pop() || 'png' : 'png';
-        const filePath = `projects/${slugify(item.title)}-${Date.now()}.${extension}`;
+        const filePrefix = finalSlugs[index] || `project-${index}`;
+        const filePath = `projects/${filePrefix}-${Date.now()}.${extension}`;
         const uploadResult = await supabase.storage
           .from('projects-images')
           .upload(filePath, selectedFile, { upsert: true, contentType: selectedFile.type });
@@ -1048,25 +1048,36 @@ export const Admin: React.FC = () => {
       })
     );
 
-    const projectsPayloadWithUploads = projectsPayload.map((item, index) => ({
-      ...item,
-      cover_path: uploadedCoverPaths[index] || item.cover_path,
-    }));
+    for (let index = 0; index < currentDraft.projects.length; index += 1) {
+      const item = currentDraft.projects[index];
+      const title = item.title.trim();
+      if (!title) continue;
 
-    if (projectsPayloadWithUploads.length) {
-      const projectsUpsert = await supabase.from('projects').upsert(projectsPayloadWithUploads, { onConflict: 'slug' });
-      if (projectsUpsert.error) throw new Error(`[projects:upsert] ${projectsUpsert.error.message}`);
+      const summarySerialized = serializeI18nText(item.summary);
+      const payload = {
+        title,
+        slug: finalSlugs[index],
+        summary: summarySerialized,
+        content: summarySerialized,
+        cover_path: uploadedCoverPaths[index] || item.coverPath || null,
+        project_url: item.projectUrl || null,
+        repository_url: item.repositoryUrl || null,
+        stack: item.stack,
+        sort_order: index,
+        is_published: isDraftPublished(item.status),
+      };
+
+      if (item.id && existingProjectIds.has(item.id)) {
+        const projectUpdate = await supabase.from('projects').update(payload).eq('id', item.id);
+        if (projectUpdate.error) throw new Error(`[projects:update] ${projectUpdate.error.message}`);
+      } else {
+        const projectInsert = await supabase.from('projects').insert(payload);
+        if (projectInsert.error) throw new Error(`[projects:insert] ${projectInsert.error.message}`);
+      }
     }
 
-    const existingProjects = await supabase.from('projects').select('slug');
-    if (existingProjects.error) throw new Error(`[projects:select] ${existingProjects.error.message}`);
-    const currentProjectSlugs = projectsPayloadWithUploads.map((item) => item.slug);
-    const projectSlugsToDelete = (existingProjects.data || [])
-      .map((row) => row.slug)
-      .filter((slug) => slug && currentProjectSlugs.indexOf(slug) === -1);
-
-    if (projectSlugsToDelete.length) {
-      const deleteResult = await supabase.from('projects').delete().in('slug', projectSlugsToDelete);
+    if (projectIdsToDelete.length) {
+      const deleteResult = await supabase.from('projects').delete().in('id', projectIdsToDelete);
       if (deleteResult.error) throw new Error(`[projects:delete] ${deleteResult.error.message}`);
     }
 
@@ -1180,6 +1191,13 @@ export const Admin: React.FC = () => {
       await saveToSupabase(draft);
       setLastSavedAt(timestamp);
       setSaveMessage('Données synchronisées.');
+
+      setProjectUploads({});
+      setAvatarUpload(null);
+      setCvUploadFr(null);
+      setCvUploadEn(null);
+
+      await loadRemoteDraft();
     } catch (error) {
       setSaveError(error instanceof Error ? formatSaveError(error.message) : 'Erreur lors de la synchronisation');
     } finally {
