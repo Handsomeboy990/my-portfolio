@@ -129,3 +129,67 @@ on public.skills
 for all
 using (public.is_admin())
 with check (public.is_admin());
+
+-- =============================================================
+-- Storage buckets et policies
+-- =============================================================
+-- Buckets utilisés par l'application (création idempotente)
+insert into storage.buckets (id, name, public)
+values ('projects-images', 'projects-images', true)
+on conflict (id) do update set public = excluded.public;
+
+insert into storage.buckets (id, name, public)
+values ('cv', 'cv', true)
+on conflict (id) do update set public = excluded.public;
+
+-- Lecture publique des fichiers (pour afficher avatars, covers, PDFs)
+drop policy if exists "public read projects-images" on storage.objects;
+create policy "public read projects-images"
+on storage.objects
+for select
+using (bucket_id = 'projects-images');
+
+drop policy if exists "public read cv" on storage.objects;
+create policy "public read cv"
+on storage.objects
+for select
+using (bucket_id = 'cv');
+
+-- Écriture réservée à l'admin (insert / update / delete)
+drop policy if exists "admin insert projects-images" on storage.objects;
+create policy "admin insert projects-images"
+on storage.objects
+for insert
+with check (bucket_id = 'projects-images' and public.is_admin());
+
+drop policy if exists "admin update projects-images" on storage.objects;
+create policy "admin update projects-images"
+on storage.objects
+for update
+using (bucket_id = 'projects-images' and public.is_admin())
+with check (bucket_id = 'projects-images' and public.is_admin());
+
+drop policy if exists "admin delete projects-images" on storage.objects;
+create policy "admin delete projects-images"
+on storage.objects
+for delete
+using (bucket_id = 'projects-images' and public.is_admin());
+
+drop policy if exists "admin insert cv" on storage.objects;
+create policy "admin insert cv"
+on storage.objects
+for insert
+with check (bucket_id = 'cv' and public.is_admin());
+
+drop policy if exists "admin update cv" on storage.objects;
+create policy "admin update cv"
+on storage.objects
+for update
+using (bucket_id = 'cv' and public.is_admin())
+with check (bucket_id = 'cv' and public.is_admin());
+
+drop policy if exists "admin delete cv" on storage.objects;
+create policy "admin delete cv"
+on storage.objects
+for delete
+using (bucket_id = 'cv' and public.is_admin());
