@@ -57,14 +57,31 @@ type SiteSettingsRow = {
     footer_text: string | null;
 };
 
+export type PublicProfile = {
+    bio: string;
+    avatarUrl: string;
+    email: string;
+    linkedinUrl: string;
+    githubUrl: string;
+    location: string;
+};
+
+export type PublicSeo = {
+    title: string;
+    description: string;
+};
+
 export type PublicContentState = {
     loaded: boolean;
     siteName: string;
+    footerText: string;
     hero: {
         title: string;
         subtitle: string;
         cvUrl: string;
     };
+    profile: PublicProfile;
+    seo: PublicSeo;
     experiences: Experience[];
     educations: Education[];
     projects: Project[];
@@ -113,16 +130,6 @@ const parseCvPaths = (value: string | null): { fr: string; en: string } => {
     return { fr: value, en: value };
 };
 
-const mapProfile = (row: ProfileRow | null, fallbackTitle: string, fallbackSubtitle: string, language: Language) => {
-    const cvPaths = parseCvPaths(row?.cv_path || null);
-
-    return {
-        title: row?.title || fallbackTitle,
-        subtitle: row?.subtitle || fallbackSubtitle,
-        cvUrl: language === 'fr' ? cvPaths.fr : cvPaths.en || cvPaths.fr,
-    };
-};
-
 const mapExperiences = (rows: ExperienceRow[]): Experience[] => {
     if (!rows.length) return EXPERIENCES;
 
@@ -145,62 +152,48 @@ const mapEducations = (rows: EducationRow[]): Education[] => {
     }));
 };
 
-const mapProjects = (rows: ProjectRow[]): Project[] => {
-    const localProjects = [...PROJECTS_DATA, ZEMI_PROJECT];
+const mapProjects = (rows: ProjectRow[]): Project[] =>
+    rows.map((row) => ({
+        title: row.title,
+        description: row.summary || row.content || '',
+        tags: row.stack ? row.stack.split(',').map((tag) => tag.trim()).filter(Boolean) : [],
+        imageUrl: row.cover_path || '',
+        repoUrl: row.repository_url || row.project_url || '#',
+        demoUrl: row.project_url || undefined,
+        status: row.is_published === false ? 'in-progress' : 'completed',
+        sort_order: row.sort_order ?? undefined,
+    }));
 
-    if (!rows.length) return localProjects;
+const emptyProfile = (): PublicProfile => ({
+    bio: '',
+    avatarUrl: '',
+    email: '',
+    linkedinUrl: '',
+    githubUrl: '',
+    location: '',
+});
 
-    const mergedProjects = localProjects.map((project) => {
-        const matchingRow = rows.find((row) => row.title.toLowerCase() === project.title.toLowerCase() || (row.slug || '').toLowerCase() === project.title.toLowerCase());
-
-        if (!matchingRow) {
-            return project;
-        }
-
-        return {
-            title: matchingRow.title,
-            description: matchingRow.summary || matchingRow.content || project.description,
-            tags: matchingRow.stack ? matchingRow.stack.split(',').map((tag) => tag.trim()).filter(Boolean) : project.tags,
-            imageUrl: matchingRow.cover_path && matchingRow.cover_path.startsWith('http') ? matchingRow.cover_path : project.imageUrl,
-            repoUrl: matchingRow.repository_url || matchingRow.project_url || project.repoUrl,
-            demoUrl: matchingRow.project_url || project.demoUrl,
-            status: matchingRow.is_published === false ? 'in-progress' : 'completed',
-        };
-    });
-
-    const extras = rows
-        .filter((row) => !localProjects.some((project) => project.title.toLowerCase() === row.title.toLowerCase() || (row.slug || '').toLowerCase() === project.title.toLowerCase()))
-        .map((row) => ({
-            title: row.title,
-            description: row.summary || row.content || '',
-            tags: row.stack ? row.stack.split(',').map((tag) => tag.trim()).filter(Boolean) : [],
-            imageUrl: row.cover_path && row.cover_path.startsWith('http') ? row.cover_path : '',
-            repoUrl: row.repository_url || row.project_url || '#',
-            demoUrl: row.project_url || undefined,
-            status: row.is_published === false ? 'in-progress' : 'completed',
-        }));
-
-    return [...mergedProjects, ...extras];
-};
-
-export const loadPublicContent = async (language: Language) => {
+export const loadPublicContent = async (language: Language): Promise<PublicContentState> => {
     const fallback = TRANSLATIONS[language];
 
     if (!hasSupabaseConfig || !supabase) {
         return {
             loaded: true,
             siteName: fallback.hero.title,
+            footerText: '',
             hero: {
                 title: fallback.hero.title,
                 subtitle: fallback.hero.subtitle,
                 cvUrl: '',
             },
+            profile: emptyProfile(),
+            seo: { title: '', description: '' },
             experiences: EXPERIENCES,
             educations: EDUCATIONS,
             projects: PROJECTS_DATA,
             zemiProject: ZEMI_PROJECT,
             translations: TRANSLATIONS,
-        } satisfies PublicContentState;
+        };
     }
 
     const [profileResult, experiencesResult, educationsResult, projectsResult, settingsResult] = await Promise.all([
@@ -211,23 +204,37 @@ export const loadPublicContent = async (language: Language) => {
         supabase.from('site_settings').select('*').limit(1).maybeSingle(),
     ]);
 
-    const fallbackHero = mapProfile(null, fallback.hero.title, fallback.hero.subtitle, language);
     const profileRow = profileResult.data as ProfileRow | null;
     const settingsRow = settingsResult.data as SiteSettingsRow | null;
-    const profileHero = mapProfile(profileRow, fallback.hero.title, fallback.hero.subtitle, language);
+    const cvPaths = parseCvPaths(profileRow?.cv_path || null);
+
+    const profile: PublicProfile = {
+        bio: profileRow?.bio || '',
+        avatarUrl: profileRow?.avatar_path || '',
+        email: profileRow?.email || '',
+        linkedinUrl: profileRow?.linkedin_url || '',
+        githubUrl: profileRow?.github_url || '',
+        location: profileRow?.location || '',
+    };
 
     return {
         loaded: true,
-        siteName: settingsRow?.site_name || profileRow?.title || fallbackHero.title,
+        siteName: settingsRow?.site_name || profileRow?.title || fallback.hero.title,
+        footerText: settingsRow?.footer_text || '',
         hero: {
-            title: settingsRow?.hero_title || profileRow?.title || fallbackHero.title,
-            subtitle: settingsRow?.hero_subtitle || profileRow?.subtitle || fallbackHero.subtitle,
-            cvUrl: profileHero.cvUrl,
+            title: settingsRow?.hero_title || profileRow?.title || fallback.hero.title,
+            subtitle: settingsRow?.hero_subtitle || profileRow?.subtitle || fallback.hero.subtitle,
+            cvUrl: language === 'fr' ? cvPaths.fr : cvPaths.en || cvPaths.fr,
+        },
+        profile,
+        seo: {
+            title: settingsRow?.seo_title || '',
+            description: settingsRow?.seo_description || '',
         },
         experiences: experiencesResult.error ? EXPERIENCES : mapExperiences((experiencesResult.data || []) as ExperienceRow[]),
         educations: educationsResult.error ? EDUCATIONS : mapEducations((educationsResult.data || []) as EducationRow[]),
         projects: projectsResult.error ? PROJECTS_DATA : mapProjects((projectsResult.data || []) as ProjectRow[]),
         zemiProject: ZEMI_PROJECT,
         translations: TRANSLATIONS,
-    } satisfies PublicContentState;
+    };
 };

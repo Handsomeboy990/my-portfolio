@@ -34,6 +34,7 @@ export interface Project {
   repoUrl: string;
   demoUrl?: string;
   status?: 'completed' | 'in-progress';
+  sort_order?: number;
 }
 
 export interface Content {

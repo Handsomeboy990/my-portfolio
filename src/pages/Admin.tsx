@@ -89,7 +89,8 @@ type AdminDraft = {
   education: EducationDraft[];
   projects: ProjectDraft[];
   media: {
-    cvPath: string;
+    cvPathFr: string;
+    cvPathEn: string;
     avatarPath: string;
     projectMediaPath: string;
   };
@@ -101,8 +102,6 @@ type AdminDraft = {
 };
 
 type SupabaseProfileRow = {
-    cvPathFr: string;
-    cvPathEn: string;
   title: string | null;
   subtitle: string | null;
   bio: string | null;
@@ -703,39 +702,14 @@ export const Admin: React.FC = () => {
     const settingsPayload = buildSettingsPayload(currentDraft);
 
     const profileRow = await supabase.from('profile').select('id').limit(1).maybeSingle();
-    if (profileRow.error) {
-      console.error('profileRow error', profileRow.error);
-      throw new Error(profileRow.error.message);
-    }
-
-    // Log current authenticated user to help diagnose RLS denials
-    try {
-      // supabase.auth.getUser() returns { data, error }
-      // we keep this log short-lived and helpful for debugging
-      const userResp = await supabase.auth.getUser();
-      // eslint-disable-next-line no-console
-      console.info('supabase user', userResp?.data?.user ? { email: userResp.data.user.email, id: userResp.data.user.id } : null);
-    } catch (e) {
-      // eslint-disable-next-line no-console
-      console.warn('could not get supabase user', e);
-    }
+    if (profileRow.error) throw new Error(profileRow.error.message);
 
     if (profileRow.data && profileRow.data.id) {
       const profileUpdate = await supabase.from('profile').update(profilePayload).eq('id', profileRow.data.id);
-      if (profileUpdate.error) {
-        // log full error object for diagnosis
-        // eslint-disable-next-line no-console
-        console.error('profile.update error', profileUpdate.error);
-        throw new Error(profileUpdate.error.message);
-      }
+      if (profileUpdate.error) throw new Error(profileUpdate.error.message);
     } else {
       const profileInsert = await supabase.from('profile').insert(profilePayload);
-      if (profileInsert.error) {
-        // log full error object for diagnosis
-        // eslint-disable-next-line no-console
-        console.error('profile.insert error', profileInsert.error);
-        throw new Error(profileInsert.error.message);
-      }
+      if (profileInsert.error) throw new Error(profileInsert.error.message);
     }
 
     const settingsRow = await supabase.from('site_settings').select('id').limit(1).maybeSingle();
@@ -748,11 +722,16 @@ export const Admin: React.FC = () => {
       if (settingsInsert.error) throw new Error(settingsInsert.error.message);
     }
 
-    const experiencesExisting = await supabase.from('experiences').select('id').order('sort_order', { ascending: true });
+    const experiencesExisting = await supabase.from('experiences').select('id');
     if (experiencesExisting.error) throw new Error(experiencesExisting.error.message);
-    const experiencesPayload = currentDraft.experience.map((item, index) => {
+    const existingExperienceIds = new Set(((experiencesExisting.data || []) as Array<{ id: string }>).map((row) => row.id));
+    const draftExperienceIds = new Set(currentDraft.experience.map((item) => item.id).filter((id): id is string => Boolean(id)));
+    const experienceIdsToDelete = [...existingExperienceIds].filter((id) => !draftExperienceIds.has(id));
+
+    for (let index = 0; index < currentDraft.experience.length; index += 1) {
+      const item = currentDraft.experience[index];
       const period = parsePeriodValue(item.period);
-      return {
+      const payload = {
         company: item.company,
         role: item.role,
         start_date: period.start_date,
@@ -761,14 +740,9 @@ export const Admin: React.FC = () => {
         sort_order: index,
         is_published: item.isPublished !== false,
       };
-    });
-    const experiencesRows = experiencesExisting.data || [];
-    for (let index = 0; index < experiencesPayload.length; index += 1) {
-      const experienceRow = experiencesRows[index] as { id?: string } | undefined;
-      const payload = experiencesPayload[index];
 
-      if (experienceRow && experienceRow.id) {
-        const experienceUpdate = await supabase.from('experiences').update(payload).eq('id', experienceRow.id);
+      if (item.id && existingExperienceIds.has(item.id)) {
+        const experienceUpdate = await supabase.from('experiences').update(payload).eq('id', item.id);
         if (experienceUpdate.error) throw new Error(experienceUpdate.error.message);
       } else {
         const experienceInsert = await supabase.from('experiences').insert(payload);
@@ -776,19 +750,21 @@ export const Admin: React.FC = () => {
       }
     }
 
-    if (experiencesRows.length > experiencesPayload.length) {
-      const experiencesToDelete = experiencesRows.slice(experiencesPayload.length).map((row) => row.id).filter(Boolean);
-      if (experiencesToDelete.length) {
-        const deleteResult = await supabase.from('experiences').delete().in('id', experiencesToDelete);
-        if (deleteResult.error) throw new Error(deleteResult.error.message);
-      }
+    if (experienceIdsToDelete.length) {
+      const deleteResult = await supabase.from('experiences').delete().in('id', experienceIdsToDelete);
+      if (deleteResult.error) throw new Error(deleteResult.error.message);
     }
 
-    const educationsExisting = await supabase.from('educations').select('id').order('sort_order', { ascending: true });
+    const educationsExisting = await supabase.from('educations').select('id');
     if (educationsExisting.error) throw new Error(educationsExisting.error.message);
-    const educationsPayload = currentDraft.education.map((item, index) => {
+    const existingEducationIds = new Set(((educationsExisting.data || []) as Array<{ id: string }>).map((row) => row.id));
+    const draftEducationIds = new Set(currentDraft.education.map((item) => item.id).filter((id): id is string => Boolean(id)));
+    const educationIdsToDelete = [...existingEducationIds].filter((id) => !draftEducationIds.has(id));
+
+    for (let index = 0; index < currentDraft.education.length; index += 1) {
+      const item = currentDraft.education[index];
       const period = parsePeriodValue(item.period);
-      return {
+      const payload = {
         school: item.school,
         diploma: item.diploma,
         start_date: period.start_date,
@@ -798,14 +774,9 @@ export const Admin: React.FC = () => {
         sort_order: index,
         is_published: item.isPublished !== false,
       };
-    });
-    const educationsRows = educationsExisting.data || [];
-    for (let index = 0; index < educationsPayload.length; index += 1) {
-      const educationRow = educationsRows[index] as { id?: string } | undefined;
-      const payload = educationsPayload[index];
 
-      if (educationRow && educationRow.id) {
-        const educationUpdate = await supabase.from('educations').update(payload).eq('id', educationRow.id);
+      if (item.id && existingEducationIds.has(item.id)) {
+        const educationUpdate = await supabase.from('educations').update(payload).eq('id', item.id);
         if (educationUpdate.error) throw new Error(educationUpdate.error.message);
       } else {
         const educationInsert = await supabase.from('educations').insert(payload);
@@ -813,12 +784,9 @@ export const Admin: React.FC = () => {
       }
     }
 
-    if (educationsRows.length > educationsPayload.length) {
-      const educationsToDelete = educationsRows.slice(educationsPayload.length).map((row) => row.id).filter(Boolean);
-      if (educationsToDelete.length) {
-        const deleteResult = await supabase.from('educations').delete().in('id', educationsToDelete);
-        if (deleteResult.error) throw new Error(deleteResult.error.message);
-      }
+    if (educationIdsToDelete.length) {
+      const deleteResult = await supabase.from('educations').delete().in('id', educationIdsToDelete);
+      if (deleteResult.error) throw new Error(deleteResult.error.message);
     }
 
     const projectsPayload = currentDraft.projects.map((item, index) => ({
@@ -1048,7 +1016,9 @@ export const Admin: React.FC = () => {
 
     return () => {
       Object.values(created).forEach((url) => URL.revokeObjectURL(url));
-      Object.values(prev || {}).forEach((url) => url && URL.revokeObjectURL(url));
+      (Object.values(prev) as string[]).forEach((url) => {
+        if (url) URL.revokeObjectURL(url);
+      });
     };
   }, [projectUploads]);
 

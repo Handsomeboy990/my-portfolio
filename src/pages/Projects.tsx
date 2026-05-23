@@ -6,6 +6,7 @@ import { SEO } from '../components/SEO';
 import { PROJECTS_DATA, ZEMI_PROJECT } from '../constants';
 import { Github, ExternalLink, Layers, Rocket } from 'lucide-react';
 import { loadPublicContent, PublicContentState } from '../lib/publicContent';
+import { supabase } from '../lib/supabase';
 
 export const Projects: React.FC = () => {
   const { language, t } = useLanguage();
@@ -32,8 +33,48 @@ export const Projects: React.FC = () => {
     };
   }, [language]);
 
+  React.useEffect(() => {
+    const client = supabase;
+    if (!client) {
+      return;
+    }
+
+    const refresh = () => {
+      loadPublicContent(language).then((content) => {
+        setPublicContent(content);
+      });
+    };
+
+    const channel = client.channel('public:projects')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'projects' }, refresh)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'projects' }, refresh)
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'projects' }, refresh)
+      .subscribe();
+
+    return () => {
+      try {
+        channel.unsubscribe();
+      } catch {
+        try {
+          client.removeChannel?.(channel);
+        } catch {
+          /* ignore */
+        }
+      }
+    };
+  }, [language]);
+
   const projects = publicContent?.projects || PROJECTS_DATA;
   const zemiProject = publicContent?.zemiProject || ZEMI_PROJECT;
+  const seoTitle = publicContent?.seo.title || t.seo.projects.title;
+  const seoDescription = publicContent?.seo.description || t.seo.projects.description;
+
+  const sortedProjects = [...projects].sort((a, b) => {
+    const orderA = typeof a.sort_order === 'number' ? a.sort_order : 0;
+    const orderB = typeof b.sort_order === 'number' ? b.sort_order : 0;
+
+    return orderA - orderB;
+  });
 
   return (
     <motion.div
@@ -43,7 +84,7 @@ export const Projects: React.FC = () => {
         exit="exit"
         className="container mx-auto px-4 py-12 md:py-20 space-y-20"
     >
-      <SEO title={t.seo.projects.title} description={t.seo.projects.description} />
+      <SEO title={seoTitle} description={seoDescription} />
       
       <div className="text-center space-y-4">
         <h1 className="text-4xl font-bold">{t.projects.title}</h1>
@@ -54,7 +95,7 @@ export const Projects: React.FC = () => {
       <section>
         <h2 className="text-2xl font-bold mb-7 border-b border-border pb-3.5">{t.projects.completed}</h2>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-7">
-          {projects.map((project, index) => (
+          {sortedProjects.map((project, index) => (
             <motion.div
               key={index}
               initial={{ opacity: 0, y: 18 }}

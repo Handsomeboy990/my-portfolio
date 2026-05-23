@@ -49,6 +49,7 @@ for all
 using (public.is_admin())
 with check (public.is_admin());
 
+-- Admin manage experiences
 drop policy if exists "admin manage experiences" on public.experiences;
 create policy "admin manage experiences"
 on public.experiences
@@ -56,6 +57,7 @@ for all
 using (public.is_admin())
 with check (public.is_admin());
 
+-- Admin manage educations
 drop policy if exists "admin manage educations" on public.educations;
 create policy "admin manage educations"
 on public.educations
@@ -63,6 +65,7 @@ for all
 using (public.is_admin())
 with check (public.is_admin());
 
+-- Admin manage projects
 drop policy if exists "admin manage projects" on public.projects;
 create policy "admin manage projects"
 on public.projects
@@ -70,9 +73,32 @@ for all
 using (public.is_admin())
 with check (public.is_admin());
 
+-- Admin manage site_settings
 drop policy if exists "admin manage site_settings" on public.site_settings;
 create policy "admin manage site_settings"
 on public.site_settings
 for all
 using (public.is_admin())
 with check (public.is_admin());
+
+-- Correction finale de la politique INSERT pour les projets
+drop policy if exists "admin insert projects" on public.projects;
+create policy "admin insert projects"
+on public.projects
+for insert
+with check (public.is_admin());
+
+-- Correction de la politique UPDATE pour permettre la mise à jour de sort_order
+drop policy if exists "admin update projects" on public.projects;
+create policy "admin update projects"
+on public.projects
+for update
+using (public.is_admin())
+with check (public.is_admin());
+
+-- Autoriser les administrateurs à supprimer des projets
+drop policy if exists "admin delete projects" on public.projects;
+create policy "admin delete projects"
+on public.projects
+for delete
+using (public.is_admin());

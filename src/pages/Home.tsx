@@ -70,6 +70,15 @@ export const Home: React.FC = () => {
   const cvUrl = publicContent?.hero.cvUrl || Cv;
   const experiences = publicContent?.experiences || EXPERIENCES;
   const educations = publicContent?.educations || EDUCATIONS;
+  const avatarUrl = publicContent?.profile.avatarUrl || ProfilPic;
+  const bioParagraphs = (publicContent?.profile.bio || '')
+    .split(/\n\s*\n/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+  const fallbackBio = [t.about.bio_p1, t.about.bio_p2, t.about.bio_p3];
+  const aboutBio = bioParagraphs.length ? bioParagraphs : fallbackBio;
+  const seoTitle = publicContent?.seo.title || t.seo.home.title;
+  const seoDescription = publicContent?.seo.description || t.seo.home.description;
 
   return (
     <motion.div 
@@ -79,7 +88,7 @@ export const Home: React.FC = () => {
         exit="exit"
         className="flex flex-col gap-20 pb-20"
     >
-      <SEO title={t.seo.home.title} description={t.seo.home.description} />
+      <SEO title={seoTitle} description={seoDescription} />
       
       {/* HERO SECTION */}
       <section className="relative pt-20 pb-28 md:pt-28 overflow-hidden">
@@ -90,7 +99,7 @@ export const Home: React.FC = () => {
             transition={{ duration: 0.65, ease: [0.34, 1.25, 0.64, 1] }}
             className="w-32 h-32 md:w-36 md:h-36 rounded-2xl border-2 border-primary/15 overflow-hidden shadow-lg mb-3"
           >
-             <img src={ProfilPic} alt="Lauret CHACHA" className="w-full h-full object-cover" />
+             <img src={avatarUrl} alt="Lauret CHACHA" className="w-full h-full object-cover" />
           </motion.div>
 
           <motion.h1
@@ -140,9 +149,9 @@ export const Home: React.FC = () => {
               {t.about.title}
             </motion.h2>
             <motion.div variants={fadeInAbout} className="prose dark:prose-invert text-muted-foreground space-y-4 leading-relaxed">
-              <p>{t.about.bio_p1}</p>
-              <p>{t.about.bio_p2}</p>
-              <p>{t.about.bio_p3}</p>
+              {aboutBio.map((paragraph, index) => (
+                <p key={index}>{paragraph}</p>
+              ))}
             </motion.div>
 
             <motion.div variants={fadeInAbout} className="pt-5">
@@ -166,7 +175,7 @@ export const Home: React.FC = () => {
                     <Briefcase className="h-5 w-5 text-primary"/> {t.experience.title}
                 </h3>
                 <div className="border-l-2 border-border ml-2 space-y-7 pl-6 relative">
-                    {EXPERIENCES.map((exp, i) => (
+                    {experiences.map((exp, i) => (
                         <motion.div key={i} variants={fadeInTimeline} className="relative">
                             <span className="absolute -left-[31px] top-1 h-4 w-4 rounded-full bg-primary ring-4 ring-background" />
                             <span className="text-sm text-muted-foreground font-mono">{exp.year}</span>
