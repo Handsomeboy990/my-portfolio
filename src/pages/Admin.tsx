@@ -26,6 +26,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { I18nText, emptyI18nText, parseI18nText, serializeI18nText } from '../lib/i18n';
 
 type AdminSectionKey = 'overview' | 'profile' | 'experience' | 'education' | 'projects' | 'media' | 'seo';
 
@@ -50,16 +51,16 @@ type DragState = {
 type ExperienceDraft = {
   id?: string;
   company: string;
-  role: string;
+  role: I18nText;
   period: string;
-  description: string;
+  description: I18nText;
   isPublished?: boolean;
 };
 
 type EducationDraft = {
   id?: string;
   school: string;
-  diploma: string;
+  diploma: I18nText;
   period: string;
   isPublished?: boolean;
 };
@@ -69,7 +70,7 @@ type ProjectDraft = {
   title: string;
   status: string;
   stack: string;
-  summary: string;
+  summary: I18nText;
   coverPath: string;
   projectUrl: string;
   repositoryUrl: string;
@@ -78,8 +79,8 @@ type ProjectDraft = {
 type AdminDraft = {
   profile: {
     title: string;
-    subtitle: string;
-    bio: string;
+    subtitle: I18nText;
+    bio: I18nText;
     email: string;
     linkedin: string;
     github: string;
@@ -96,8 +97,8 @@ type AdminDraft = {
   };
   seo: {
     siteName: string;
-    metaTitle: string;
-    metaDescription: string;
+    metaTitle: I18nText;
+    metaDescription: I18nText;
   };
 };
 
@@ -167,25 +168,36 @@ const STORAGE_KEY = 'portfolio-admin-draft';
 const defaultDraft: AdminDraft = {
   profile: {
     title: 'Lauret Kryst-Sasler CHACHA',
-    subtitle: 'Développeur Web Full Stack',
-    bio: 'Rédige ici le texte principal du profil public.',
+    subtitle: { fr: 'Développeur Web Full Stack', en: 'Full Stack Web Developer' },
+    bio: { fr: 'Rédige ici le texte principal du profil public.', en: 'Write the public profile text here.' },
     email: 'lauret.chacha@epitech.eu',
     linkedin: 'https://linkedin.com/in/lauret-kryst-sasler-chacha-a877161aa',
     github: 'https://github.com/Handsomeboy990',
     location: 'France',
   },
   experience: [
-    { company: 'Epitech', role: 'Full Stack Developer', period: '2025 - Present', description: 'Développement web et intégration front/back.', isPublished: true },
+    {
+      company: 'Epitech',
+      role: { fr: 'Full Stack Developer', en: 'Full Stack Developer' },
+      period: '2025 - Present',
+      description: { fr: 'Développement web et intégration front/back.', en: 'Web development and front/back integration.' },
+      isPublished: true,
+    },
   ],
   education: [
-    { school: 'Epitech', diploma: 'Certification Full Stack Developer', period: '2026', isPublished: true },
+    {
+      school: 'Epitech',
+      diploma: { fr: 'Certification Full Stack Developer', en: 'Full Stack Developer Certification' },
+      period: '2026',
+      isPublished: true,
+    },
   ],
   projects: [
     {
       title: 'Zémi',
       status: 'En cours',
       stack: 'Next.js, MongoDB, TypeScript',
-      summary: 'Projet prioritaire à mettre en avant.',
+      summary: { fr: 'Projet prioritaire à mettre en avant.', en: 'Priority project to highlight.' },
       coverPath: '',
       projectUrl: '',
       repositoryUrl: '',
@@ -199,8 +211,8 @@ const defaultDraft: AdminDraft = {
   },
   seo: {
     siteName: 'Lauret CHACHA',
-    metaTitle: 'Portfolio Lauret CHACHA',
-    metaDescription: 'Portfolio administrable avec backoffice privé.',
+    metaTitle: { fr: 'Portfolio Lauret CHACHA', en: 'Lauret CHACHA Portfolio' },
+    metaDescription: { fr: 'Portfolio administrable avec backoffice privé.', en: 'Administrable portfolio with a private backoffice.' },
   },
 };
 
@@ -214,11 +226,88 @@ const sections: Array<{ key: AdminSectionKey; label: string; icon: LucideIcon }>
   { key: 'seo', label: 'SEO', icon: Globe },
 ];
 
+const toI18nValue = (value: unknown, fallback: I18nText): I18nText => {
+  if (typeof value === 'string') {
+    return parseI18nText(value);
+  }
+  if (value && typeof value === 'object') {
+    const candidate = value as { fr?: unknown; en?: unknown };
+    if (typeof candidate.fr === 'string' || typeof candidate.en === 'string') {
+      return {
+        fr: typeof candidate.fr === 'string' ? candidate.fr : '',
+        en: typeof candidate.en === 'string' ? candidate.en : '',
+      };
+    }
+  }
+  return fallback;
+};
+
+const migrateDraft = (raw: unknown): AdminDraft => {
+  const source = (raw && typeof raw === 'object' ? raw : {}) as Record<string, any>;
+  const profileSrc = (source.profile && typeof source.profile === 'object' ? source.profile : {}) as Record<string, any>;
+  const mediaSrc = (source.media && typeof source.media === 'object' ? source.media : {}) as Record<string, any>;
+  const seoSrc = (source.seo && typeof source.seo === 'object' ? source.seo : {}) as Record<string, any>;
+
+  return {
+    profile: {
+      title: typeof profileSrc.title === 'string' ? profileSrc.title : defaultDraft.profile.title,
+      subtitle: toI18nValue(profileSrc.subtitle, defaultDraft.profile.subtitle),
+      bio: toI18nValue(profileSrc.bio, defaultDraft.profile.bio),
+      email: typeof profileSrc.email === 'string' ? profileSrc.email : defaultDraft.profile.email,
+      linkedin: typeof profileSrc.linkedin === 'string' ? profileSrc.linkedin : defaultDraft.profile.linkedin,
+      github: typeof profileSrc.github === 'string' ? profileSrc.github : defaultDraft.profile.github,
+      location: typeof profileSrc.location === 'string' ? profileSrc.location : defaultDraft.profile.location,
+    },
+    experience: Array.isArray(source.experience)
+      ? source.experience.map((item: any) => ({
+          id: typeof item?.id === 'string' ? item.id : undefined,
+          company: typeof item?.company === 'string' ? item.company : '',
+          role: toI18nValue(item?.role, emptyI18nText()),
+          period: typeof item?.period === 'string' ? item.period : '',
+          description: toI18nValue(item?.description, emptyI18nText()),
+          isPublished: item?.isPublished !== false,
+        }))
+      : defaultDraft.experience,
+    education: Array.isArray(source.education)
+      ? source.education.map((item: any) => ({
+          id: typeof item?.id === 'string' ? item.id : undefined,
+          school: typeof item?.school === 'string' ? item.school : '',
+          diploma: toI18nValue(item?.diploma, emptyI18nText()),
+          period: typeof item?.period === 'string' ? item.period : '',
+          isPublished: item?.isPublished !== false,
+        }))
+      : defaultDraft.education,
+    projects: Array.isArray(source.projects)
+      ? source.projects.map((item: any) => ({
+          id: typeof item?.id === 'string' ? item.id : undefined,
+          title: typeof item?.title === 'string' ? item.title : '',
+          status: typeof item?.status === 'string' ? item.status : 'Brouillon',
+          stack: typeof item?.stack === 'string' ? item.stack : '',
+          summary: toI18nValue(item?.summary, emptyI18nText()),
+          coverPath: typeof item?.coverPath === 'string' ? item.coverPath : '',
+          projectUrl: typeof item?.projectUrl === 'string' ? item.projectUrl : '',
+          repositoryUrl: typeof item?.repositoryUrl === 'string' ? item.repositoryUrl : '',
+        }))
+      : defaultDraft.projects,
+    media: {
+      cvPathFr: typeof mediaSrc.cvPathFr === 'string' ? mediaSrc.cvPathFr : defaultDraft.media.cvPathFr,
+      cvPathEn: typeof mediaSrc.cvPathEn === 'string' ? mediaSrc.cvPathEn : defaultDraft.media.cvPathEn,
+      avatarPath: typeof mediaSrc.avatarPath === 'string' ? mediaSrc.avatarPath : defaultDraft.media.avatarPath,
+      projectMediaPath: typeof mediaSrc.projectMediaPath === 'string' ? mediaSrc.projectMediaPath : defaultDraft.media.projectMediaPath,
+    },
+    seo: {
+      siteName: typeof seoSrc.siteName === 'string' ? seoSrc.siteName : defaultDraft.seo.siteName,
+      metaTitle: toI18nValue(seoSrc.metaTitle, defaultDraft.seo.metaTitle),
+      metaDescription: toI18nValue(seoSrc.metaDescription, defaultDraft.seo.metaDescription),
+    },
+  };
+};
+
 const safeParseDraft = (rawValue: string | null): AdminDraft | null => {
   if (!rawValue) return null;
 
   try {
-    return JSON.parse(rawValue) as AdminDraft;
+    return migrateDraft(JSON.parse(rawValue));
   } catch {
     return null;
   }
@@ -358,8 +447,8 @@ const isDraftPublished = (status: string): boolean => !status.toLowerCase().incl
 
 const buildProfilePayload = (draft: AdminDraft) => ({
   title: draft.profile.title,
-  subtitle: draft.profile.subtitle,
-  bio: draft.profile.bio,
+  subtitle: serializeI18nText(draft.profile.subtitle),
+  bio: serializeI18nText(draft.profile.bio),
   avatar_path: draft.media.avatarPath,
   cv_path: serializeCvPaths({ fr: draft.media.cvPathFr, en: draft.media.cvPathEn }),
   email: draft.profile.email,
@@ -370,10 +459,10 @@ const buildProfilePayload = (draft: AdminDraft) => ({
 
 const buildSettingsPayload = (draft: AdminDraft) => ({
   site_name: draft.seo.siteName,
-  seo_title: draft.seo.metaTitle,
-  seo_description: draft.seo.metaDescription,
+  seo_title: serializeI18nText(draft.seo.metaTitle),
+  seo_description: serializeI18nText(draft.seo.metaDescription),
   hero_title: draft.profile.title,
-  hero_subtitle: draft.profile.subtitle,
+  hero_subtitle: serializeI18nText(draft.profile.subtitle),
   footer_text: `${draft.profile.title} - ${draft.profile.location}`,
 });
 
@@ -386,8 +475,8 @@ const mapProfileRowToDraft = (row: SupabaseProfileRow | null, fallback: AdminDra
     ...fallback,
     profile: {
       title: row.title || fallback.profile.title,
-      subtitle: row.subtitle || fallback.profile.subtitle,
-      bio: row.bio || fallback.profile.bio,
+      subtitle: row.subtitle ? parseI18nText(row.subtitle) : fallback.profile.subtitle,
+      bio: row.bio ? parseI18nText(row.bio) : fallback.profile.bio,
       email: row.email || fallback.profile.email,
       linkedin: row.linkedin_url || fallback.profile.linkedin,
       github: row.github_url || fallback.profile.github,
@@ -415,9 +504,9 @@ const mapExperiencesToDraft = (rows: SupabaseExperienceRow[], fallback: AdminDra
   return rows.map((row) => ({
     id: row.id,
     company: row.company,
-    role: row.role,
+    role: parseI18nText(row.role),
     period: formatPeriodValue(row.start_date, row.end_date),
-    description: row.description || '',
+    description: parseI18nText(row.description),
     isPublished: row.is_published !== false,
   }));
 };
@@ -430,7 +519,7 @@ const mapEducationsToDraft = (rows: SupabaseEducationRow[], fallback: AdminDraft
   return rows.map((row) => ({
     id: row.id,
     school: row.school,
-    diploma: row.diploma,
+    diploma: parseI18nText(row.diploma),
     period: formatPeriodValue(row.start_date, row.end_date),
     isPublished: row.is_published !== false,
   }));
@@ -446,7 +535,7 @@ const mapProjectsToDraft = (rows: SupabaseProjectRow[], fallback: AdminDraft): A
     title: row.title,
     status: mapPublishedStatus(row.is_published),
     stack: row.stack || '',
-    summary: row.summary || row.content || '',
+    summary: parseI18nText(row.summary || row.content),
     coverPath: row.cover_path || '',
     projectUrl: row.project_url || '',
     repositoryUrl: row.repository_url || '',
@@ -475,6 +564,52 @@ const TextArea: React.FC<React.TextareaHTMLAttributes<HTMLTextAreaElement>> = (p
     {...props}
     className={`min-h-[120px] w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none transition-colors focus:border-primary ${props.className || ''}`}
   />
+);
+
+const I18nField: React.FC<{
+  label: string;
+  value: I18nText;
+  onChange: (next: I18nText) => void;
+  multiline?: boolean;
+  placeholder?: string;
+  hint?: string;
+}> = ({ label, value, onChange, multiline, placeholder, hint }) => (
+  <Field label={label} hint={hint || 'FR / EN'}>
+    <div className="grid gap-3 sm:grid-cols-2">
+      <div className="space-y-1.5">
+        <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">FR</span>
+        {multiline ? (
+          <TextArea
+            value={value.fr}
+            placeholder={placeholder}
+            onChange={(event) => onChange({ ...value, fr: event.target.value })}
+          />
+        ) : (
+          <TextInput
+            value={value.fr}
+            placeholder={placeholder}
+            onChange={(event) => onChange({ ...value, fr: event.target.value })}
+          />
+        )}
+      </div>
+      <div className="space-y-1.5">
+        <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">EN</span>
+        {multiline ? (
+          <TextArea
+            value={value.en}
+            placeholder={placeholder}
+            onChange={(event) => onChange({ ...value, en: event.target.value })}
+          />
+        ) : (
+          <TextInput
+            value={value.en}
+            placeholder={placeholder}
+            onChange={(event) => onChange({ ...value, en: event.target.value })}
+          />
+        )}
+      </div>
+    </div>
+  </Field>
 );
 
 const StatCard: React.FC<{ label: string; value: string; detail: string; icon: LucideIcon }> = ({ label, value, detail, icon: Icon }) => (
@@ -571,15 +706,15 @@ export const Admin: React.FC = () => {
 
   const createEmptyExperience = (): ExperienceDraft => ({
     company: '',
-    role: '',
+    role: emptyI18nText(),
     period: '',
-    description: '',
+    description: emptyI18nText(),
     isPublished: false,
   });
 
   const createEmptyEducation = (): EducationDraft => ({
     school: '',
-    diploma: '',
+    diploma: emptyI18nText(),
     period: '',
     isPublished: false,
   });
@@ -588,7 +723,7 @@ export const Admin: React.FC = () => {
     title: '',
     status: 'Brouillon',
     stack: '',
-    summary: '',
+    summary: emptyI18nText(),
     coverPath: '',
     projectUrl: '',
     repositoryUrl: '',
@@ -733,10 +868,10 @@ export const Admin: React.FC = () => {
       const period = parsePeriodValue(item.period);
       const payload = {
         company: item.company,
-        role: item.role,
+        role: serializeI18nText(item.role),
         start_date: period.start_date,
         end_date: period.end_date,
-        description: item.description,
+        description: serializeI18nText(item.description),
         sort_order: index,
         is_published: item.isPublished !== false,
       };
@@ -766,7 +901,7 @@ export const Admin: React.FC = () => {
       const period = parsePeriodValue(item.period);
       const payload = {
         school: item.school,
-        diploma: item.diploma,
+        diploma: serializeI18nText(item.diploma),
         start_date: period.start_date,
         end_date: period.end_date,
         description: '',
@@ -789,18 +924,21 @@ export const Admin: React.FC = () => {
       if (deleteResult.error) throw new Error(deleteResult.error.message);
     }
 
-    const projectsPayload = currentDraft.projects.map((item, index) => ({
-      title: item.title,
-      slug: slugify(item.title),
-      summary: item.summary,
-      content: item.summary,
-      cover_path: item.coverPath || null,
-      project_url: item.projectUrl || null,
-      repository_url: item.repositoryUrl || null,
-      stack: item.stack,
-      sort_order: index,
-      is_published: isDraftPublished(item.status),
-    }));
+    const projectsPayload = currentDraft.projects.map((item, index) => {
+      const summarySerialized = serializeI18nText(item.summary);
+      return {
+        title: item.title,
+        slug: slugify(item.title),
+        summary: summarySerialized,
+        content: summarySerialized,
+        cover_path: item.coverPath || null,
+        project_url: item.projectUrl || null,
+        repository_url: item.repositoryUrl || null,
+        stack: item.stack,
+        sort_order: index,
+        is_published: isDraftPublished(item.status),
+      };
+    });
 
     const uploadedCoverPaths = await Promise.all(
       currentDraft.projects.map(async (item, index) => {
@@ -1407,9 +1545,11 @@ export const Admin: React.FC = () => {
                   <Field label="Titre">
                     <TextInput value={draft.profile.title} onChange={(event) => setDraft({ ...draft, profile: { ...draft.profile, title: event.target.value } })} />
                   </Field>
-                  <Field label="Sous-titre">
-                    <TextInput value={draft.profile.subtitle} onChange={(event) => setDraft({ ...draft, profile: { ...draft.profile, subtitle: event.target.value } })} />
-                  </Field>
+                  <I18nField
+                    label="Sous-titre"
+                    value={draft.profile.subtitle}
+                    onChange={(next) => setDraft({ ...draft, profile: { ...draft.profile, subtitle: next } })}
+                  />
                   <Field label="Email">
                     <TextInput value={draft.profile.email} onChange={(event) => setDraft({ ...draft, profile: { ...draft.profile, email: event.target.value } })} />
                   </Field>
@@ -1418,9 +1558,12 @@ export const Admin: React.FC = () => {
                   </Field>
                 </div>
                 <div className="mt-4 grid gap-4">
-                  <Field label="Bio">
-                    <TextArea value={draft.profile.bio} onChange={(event) => setDraft({ ...draft, profile: { ...draft.profile, bio: event.target.value } })} />
-                  </Field>
+                  <I18nField
+                    label="Bio"
+                    multiline
+                    value={draft.profile.bio}
+                    onChange={(next) => setDraft({ ...draft, profile: { ...draft.profile, bio: next } })}
+                  />
                   <div className="grid gap-4 md:grid-cols-2">
                     <Field label="LinkedIn">
                       <TextInput value={draft.profile.linkedin} onChange={(event) => setDraft({ ...draft, profile: { ...draft.profile, linkedin: event.target.value } })} />
@@ -1533,18 +1676,11 @@ export const Admin: React.FC = () => {
                           </Button>
                         </div>
                       </div>
-                      <div className="grid gap-4 md:grid-cols-3">
+                      <div className="grid gap-4 md:grid-cols-2">
                         <Field label="Entreprise">
                           <TextInput value={item.company} onChange={(event) => {
                             const experience = [...draft.experience];
                             experience[index] = { ...experience[index], company: event.target.value };
-                            setDraft({ ...draft, experience });
-                          }} />
-                        </Field>
-                        <Field label="Rôle">
-                          <TextInput value={item.role} onChange={(event) => {
-                            const experience = [...draft.experience];
-                            experience[index] = { ...experience[index], role: event.target.value };
                             setDraft({ ...draft, experience });
                           }} />
                         </Field>
@@ -1557,13 +1693,27 @@ export const Admin: React.FC = () => {
                         </Field>
                       </div>
                       <div className="mt-4">
-                        <Field label="Description">
-                          <TextArea value={item.description} onChange={(event) => {
+                        <I18nField
+                          label="Rôle"
+                          value={item.role}
+                          onChange={(next) => {
                             const experience = [...draft.experience];
-                            experience[index] = { ...experience[index], description: event.target.value };
+                            experience[index] = { ...experience[index], role: next };
                             setDraft({ ...draft, experience });
-                          }} />
-                        </Field>
+                          }}
+                        />
+                      </div>
+                      <div className="mt-4">
+                        <I18nField
+                          label="Description"
+                          multiline
+                          value={item.description}
+                          onChange={(next) => {
+                            const experience = [...draft.experience];
+                            experience[index] = { ...experience[index], description: next };
+                            setDraft({ ...draft, experience });
+                          }}
+                        />
                       </div>
                     </div>
                   ))}
@@ -1612,18 +1762,11 @@ export const Admin: React.FC = () => {
                           </Button>
                         </div>
                       </div>
-                      <div className="grid gap-4 md:grid-cols-3">
+                      <div className="grid gap-4 md:grid-cols-2">
                         <Field label="Établissement">
                           <TextInput value={item.school} onChange={(event) => {
                             const education = [...draft.education];
                             education[index] = { ...education[index], school: event.target.value };
-                            setDraft({ ...draft, education });
-                          }} />
-                        </Field>
-                        <Field label="Diplôme">
-                          <TextInput value={item.diploma} onChange={(event) => {
-                            const education = [...draft.education];
-                            education[index] = { ...education[index], diploma: event.target.value };
                             setDraft({ ...draft, education });
                           }} />
                         </Field>
@@ -1634,6 +1777,17 @@ export const Admin: React.FC = () => {
                             setDraft({ ...draft, education });
                           }} />
                         </Field>
+                      </div>
+                      <div className="mt-4">
+                        <I18nField
+                          label="Diplôme"
+                          value={item.diploma}
+                          onChange={(next) => {
+                            const education = [...draft.education];
+                            education[index] = { ...education[index], diploma: next };
+                            setDraft({ ...draft, education });
+                          }}
+                        />
                       </div>
                     </div>
                   ))}
@@ -1705,14 +1859,19 @@ export const Admin: React.FC = () => {
                           }} />
                         </Field>
                       </div>
-                      <div className="mt-4 grid gap-4 md:grid-cols-2">
-                        <Field label="Résumé">
-                          <TextArea value={item.summary} onChange={(event) => {
+                      <div className="mt-4">
+                        <I18nField
+                          label="Résumé"
+                          multiline
+                          value={item.summary}
+                          onChange={(next) => {
                             const projects = [...draft.projects];
-                            projects[index] = { ...projects[index], summary: event.target.value };
+                            projects[index] = { ...projects[index], summary: next };
                             setDraft({ ...draft, projects });
-                          }} />
-                        </Field>
+                          }}
+                        />
+                      </div>
+                      <div className="mt-4 grid gap-4 md:grid-cols-2">
                         <Field label="Image du projet" hint="Upload vers projects-images">
                           <div className="space-y-3">
                             <TextInput
@@ -1790,18 +1949,21 @@ export const Admin: React.FC = () => {
 
             {activeSection === 'seo' && (
               <SectionPanel title="SEO" description="Réglages de base du site public." icon={Link2}>
-                <div className="grid gap-4 md:grid-cols-2">
+                <div className="grid gap-4">
                   <Field label="Nom du site">
                     <TextInput value={draft.seo.siteName} onChange={(event) => setDraft({ ...draft, seo: { ...draft.seo, siteName: event.target.value } })} />
                   </Field>
-                  <Field label="Titre meta">
-                    <TextInput value={draft.seo.metaTitle} onChange={(event) => setDraft({ ...draft, seo: { ...draft.seo, metaTitle: event.target.value } })} />
-                  </Field>
-                </div>
-                <div className="mt-4">
-                  <Field label="Description meta">
-                    <TextArea value={draft.seo.metaDescription} onChange={(event) => setDraft({ ...draft, seo: { ...draft.seo, metaDescription: event.target.value } })} />
-                  </Field>
+                  <I18nField
+                    label="Titre meta"
+                    value={draft.seo.metaTitle}
+                    onChange={(next) => setDraft({ ...draft, seo: { ...draft.seo, metaTitle: next } })}
+                  />
+                  <I18nField
+                    label="Description meta"
+                    multiline
+                    value={draft.seo.metaDescription}
+                    onChange={(next) => setDraft({ ...draft, seo: { ...draft.seo, metaDescription: next } })}
+                  />
                 </div>
               </SectionPanel>
             )}

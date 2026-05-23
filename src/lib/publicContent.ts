@@ -1,6 +1,7 @@
 import { supabase, hasSupabaseConfig } from './supabase';
 import { EDUCATIONS, EXPERIENCES, PROJECTS_DATA, ZEMI_PROJECT, TRANSLATIONS } from '../constants';
 import { Education, Experience, Project, Language, Content } from '../../types';
+import { pickI18n } from './i18n';
 
 type ProfileRow = {
     title: string | null;
@@ -130,32 +131,32 @@ const parseCvPaths = (value: string | null): { fr: string; en: string } => {
     return { fr: value, en: value };
 };
 
-const mapExperiences = (rows: ExperienceRow[]): Experience[] => {
+const mapExperiences = (rows: ExperienceRow[], language: Language): Experience[] => {
     if (!rows.length) return EXPERIENCES;
 
     return rows.map((row) => ({
         year: formatPeriod(row.start_date, row.end_date),
-        role: row.role,
+        role: pickI18n(row.role, language),
         company: row.company,
-        description: row.description || '',
+        description: pickI18n(row.description, language),
     }));
 };
 
-const mapEducations = (rows: EducationRow[]): Education[] => {
+const mapEducations = (rows: EducationRow[], language: Language): Education[] => {
     if (!rows.length) return EDUCATIONS;
 
     return rows.map((row) => ({
         year: formatDate(row.end_date || row.start_date),
-        degree: row.diploma,
+        degree: pickI18n(row.diploma, language),
         school: row.school,
         url: row.kind || '',
     }));
 };
 
-const mapProjects = (rows: ProjectRow[]): Project[] =>
+const mapProjects = (rows: ProjectRow[], language: Language): Project[] =>
     rows.map((row) => ({
         title: row.title,
-        description: row.summary || row.content || '',
+        description: pickI18n(row.summary || row.content, language),
         tags: row.stack ? row.stack.split(',').map((tag) => tag.trim()).filter(Boolean) : [],
         imageUrl: row.cover_path || '',
         repoUrl: row.repository_url || row.project_url || '#',
@@ -209,7 +210,7 @@ export const loadPublicContent = async (language: Language): Promise<PublicConte
     const cvPaths = parseCvPaths(profileRow?.cv_path || null);
 
     const profile: PublicProfile = {
-        bio: profileRow?.bio || '',
+        bio: pickI18n(profileRow?.bio, language),
         avatarUrl: profileRow?.avatar_path || '',
         email: profileRow?.email || '',
         linkedinUrl: profileRow?.linkedin_url || '',
@@ -217,23 +218,26 @@ export const loadPublicContent = async (language: Language): Promise<PublicConte
         location: profileRow?.location || '',
     };
 
+    const rawHeroSubtitle = settingsRow?.hero_subtitle || profileRow?.subtitle;
+    const heroSubtitle = rawHeroSubtitle ? pickI18n(rawHeroSubtitle, language) : fallback.hero.subtitle;
+
     return {
         loaded: true,
         siteName: settingsRow?.site_name || profileRow?.title || fallback.hero.title,
-        footerText: settingsRow?.footer_text || '',
+        footerText: pickI18n(settingsRow?.footer_text, language),
         hero: {
             title: settingsRow?.hero_title || profileRow?.title || fallback.hero.title,
-            subtitle: settingsRow?.hero_subtitle || profileRow?.subtitle || fallback.hero.subtitle,
+            subtitle: heroSubtitle,
             cvUrl: language === 'fr' ? cvPaths.fr : cvPaths.en || cvPaths.fr,
         },
         profile,
         seo: {
-            title: settingsRow?.seo_title || '',
-            description: settingsRow?.seo_description || '',
+            title: pickI18n(settingsRow?.seo_title, language),
+            description: pickI18n(settingsRow?.seo_description, language),
         },
-        experiences: experiencesResult.error ? EXPERIENCES : mapExperiences((experiencesResult.data || []) as ExperienceRow[]),
-        educations: educationsResult.error ? EDUCATIONS : mapEducations((educationsResult.data || []) as EducationRow[]),
-        projects: projectsResult.error ? PROJECTS_DATA : mapProjects((projectsResult.data || []) as ProjectRow[]),
+        experiences: experiencesResult.error ? EXPERIENCES : mapExperiences((experiencesResult.data || []) as ExperienceRow[], language),
+        educations: educationsResult.error ? EDUCATIONS : mapEducations((educationsResult.data || []) as EducationRow[], language),
+        projects: projectsResult.error ? PROJECTS_DATA : mapProjects((projectsResult.data || []) as ProjectRow[], language),
         zemiProject: ZEMI_PROJECT,
         translations: TRANSLATIONS,
     };
