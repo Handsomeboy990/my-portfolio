@@ -3,8 +3,8 @@ import { motion } from 'framer-motion';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Button } from '../components/ui/Button';
 import { SEO } from '../components/SEO';
-import { PROJECTS_DATA, ZEMI_PROJECT } from '../constants';
-import { Github, ExternalLink, Layers, Rocket } from 'lucide-react';
+import { PROJECTS_DATA } from '../constants';
+import { ExternalLink } from 'lucide-react';
 import { loadPublicContent, PublicContentState } from '../lib/publicContent';
 import { supabase } from '../lib/supabase';
 
@@ -65,7 +65,6 @@ export const Projects: React.FC = () => {
   }, [language]);
 
   const projects = publicContent?.projects || PROJECTS_DATA;
-  const zemiProject = publicContent?.zemiProject || ZEMI_PROJECT;
   const seoTitle = publicContent?.seo.title || t.seo.projects.title;
   const seoDescription = publicContent?.seo.description || t.seo.projects.description;
 
@@ -140,53 +139,6 @@ export const Projects: React.FC = () => {
               </div>
             </motion.div>
           ))}
-        </div>
-      </section>
-
-      {/* In Progress - ZEMI */}
-      <section className="bg-muted/30 rounded-3xl p-8 md:p-11 border border-primary/10">
-        <div className="flex flex-col md:flex-row gap-10 items-center">
-            <div className="flex-1 space-y-5">
-                <div className="flex items-center gap-2 text-primary font-bold uppercase tracking-wide text-xs">
-                    <Rocket className="h-4 w-4" /> {t.projects.in_progress}
-                </div>
-                <h2 className="text-3xl md:text-4xl font-bold">{zemiProject.title}</h2>
-                <p className="text-base md:text-lg text-muted-foreground leading-relaxed">{t.projects.zemi_desc}</p>
-
-                <div className="space-y-3.5 pt-2">
-                    <div className="flex gap-3 items-start">
-                        <Layers className="h-5 w-5 mt-0.5 text-primary shrink-0" />
-                        <div>
-                            <h4 className="font-semibold text-[15px] mb-1">{language === 'fr' ? 'Fonctionnalités' : 'Features'}</h4>
-                            <p className="text-sm text-muted-foreground leading-relaxed">{t.projects.zemi_features}</p>
-                        </div>
-                    </div>
-                    <div className="flex gap-3 items-start">
-                        <Rocket className="h-5 w-5 mt-0.5 text-primary shrink-0" />
-                        <div>
-                            <h4 className="font-semibold text-[15px] mb-1">{language === 'fr' ? 'Feuille de route' : 'Roadmap'}</h4>
-                            <p className="text-sm text-muted-foreground leading-relaxed">{t.projects.zemi_roadmap}</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="flex flex-wrap gap-2 pt-3">
-                    {zemiProject.tags.map(tag => (
-                        <span key={tag} className="text-xs px-2.5 py-1 border border-primary/30 text-primary rounded-md font-medium">
-                        {tag}
-                        </span>
-                    ))}
-                </div>
-            </div>
-            <div className="flex-1 w-full">
-                 <div className="aspect-video bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl flex items-center justify-center border border-border shadow-xl overflow-hidden">
-                        <img
-                      src={zemiProject.imageUrl}
-                      alt={zemiProject.title}
-                        className="w-full h-full object-cover"
-                      />
-                 </div>
-            </div>
         </div>
       </section>
 
