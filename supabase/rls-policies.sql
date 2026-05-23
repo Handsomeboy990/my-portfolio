@@ -1,8 +1,21 @@
+create table if not exists public.skills (
+  id uuid primary key default gen_random_uuid(),
+  category text not null check (category in ('frontend', 'backend', 'database', 'tools')),
+  name text not null,
+  sort_order int not null default 0,
+  is_published boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists skills_category_sort_idx on public.skills (category, sort_order);
+
 alter table public.profile enable row level security;
 alter table public.experiences enable row level security;
 alter table public.educations enable row level security;
 alter table public.projects enable row level security;
 alter table public.site_settings enable row level security;
+alter table public.skills enable row level security;
 
 drop policy if exists "public read profile" on public.profile;
 create policy "public read profile"
@@ -33,6 +46,12 @@ create policy "public read site_settings"
 on public.site_settings
 for select
 using (true);
+
+drop policy if exists "public read skills" on public.skills;
+create policy "public read skills"
+on public.skills
+for select
+using (is_published = true);
 
 create or replace function public.is_admin()
 returns boolean
@@ -102,3 +121,11 @@ create policy "admin delete projects"
 on public.projects
 for delete
 using (public.is_admin());
+
+-- Admin manage skills
+drop policy if exists "admin manage skills" on public.skills;
+create policy "admin manage skills"
+on public.skills
+for all
+using (public.is_admin())
+with check (public.is_admin());

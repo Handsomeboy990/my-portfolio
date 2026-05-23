@@ -2,6 +2,7 @@ import { supabase, hasSupabaseConfig } from './supabase';
 import { EDUCATIONS, EXPERIENCES, PROJECTS_DATA, ZEMI_PROJECT, TRANSLATIONS } from '../constants';
 import { Education, Experience, Project, Language, Content } from '../../types';
 import { pickI18n } from './i18n';
+import { SkillCategory } from './skillIcons';
 
 type ProfileRow = {
     title: string | null;
@@ -58,6 +59,19 @@ type SiteSettingsRow = {
     footer_text: string | null;
 };
 
+type SkillRow = {
+    id: string;
+    category: SkillCategory;
+    name: string;
+    sort_order: number | null;
+    is_published: boolean | null;
+};
+
+export type PublicSkill = {
+    category: SkillCategory;
+    name: string;
+};
+
 export type PublicProfile = {
     bio: string;
     avatarUrl: string;
@@ -87,6 +101,7 @@ export type PublicContentState = {
     educations: Education[];
     projects: Project[];
     zemiProject: Project;
+    skills: PublicSkill[];
     translations: Record<Language, Content>;
 };
 
@@ -165,6 +180,9 @@ const mapProjects = (rows: ProjectRow[], language: Language): Project[] =>
         sort_order: row.sort_order ?? undefined,
     }));
 
+const mapSkills = (rows: SkillRow[]): PublicSkill[] =>
+    rows.map((row) => ({ category: row.category, name: row.name }));
+
 const emptyProfile = (): PublicProfile => ({
     bio: '',
     avatarUrl: '',
@@ -193,16 +211,18 @@ export const loadPublicContent = async (language: Language): Promise<PublicConte
             educations: EDUCATIONS,
             projects: PROJECTS_DATA,
             zemiProject: ZEMI_PROJECT,
+            skills: [],
             translations: TRANSLATIONS,
         };
     }
 
-    const [profileResult, experiencesResult, educationsResult, projectsResult, settingsResult] = await Promise.all([
+    const [profileResult, experiencesResult, educationsResult, projectsResult, settingsResult, skillsResult] = await Promise.all([
         supabase.from('profile').select('*').limit(1).maybeSingle(),
         supabase.from('experiences').select('*').eq('is_published', true).order('sort_order', { ascending: true }),
         supabase.from('educations').select('*').eq('is_published', true).order('sort_order', { ascending: true }),
         supabase.from('projects').select('*').eq('is_published', true).order('sort_order', { ascending: true }),
         supabase.from('site_settings').select('*').limit(1).maybeSingle(),
+        supabase.from('skills').select('*').eq('is_published', true).order('category', { ascending: true }).order('sort_order', { ascending: true }),
     ]);
 
     const profileRow = profileResult.data as ProfileRow | null;
@@ -239,6 +259,7 @@ export const loadPublicContent = async (language: Language): Promise<PublicConte
         educations: educationsResult.error ? EDUCATIONS : mapEducations((educationsResult.data || []) as EducationRow[], language),
         projects: projectsResult.error ? PROJECTS_DATA : mapProjects((projectsResult.data || []) as ProjectRow[], language),
         zemiProject: ZEMI_PROJECT,
+        skills: skillsResult.error ? [] : mapSkills((skillsResult.data || []) as SkillRow[]),
         translations: TRANSLATIONS,
     };
 };

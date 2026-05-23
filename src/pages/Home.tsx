@@ -5,17 +5,14 @@ import Cv from '@/src/assets/documents/Lauret_Chacha_Développeur_Web_Fullstack.
 import { useLanguage } from '../contexts/LanguageContext';
 import { Button } from '../components/ui/Button';
 import { SEO } from '../components/SEO';
-import { 
-  Download, ArrowRight, Code2, Server, Database, 
-  Terminal, Brain, Briefcase, Award, 
-  Atom, FileCode2, Palette, Zap, Wind, Braces,
-  Hexagon, Globe, Workflow, Layers, 
-  Table, FileJson, Triangle, Container, GitBranch,
-  Send, Command
+import {
+  Download, ArrowRight, Code2, Server, Database,
+  Terminal, Brain, Briefcase, Award,
 } from 'lucide-react';
 import { EXPERIENCES, EDUCATIONS } from '../constants';
 import { Link } from 'react-router-dom';
 import { loadPublicContent, PublicContentState } from '../lib/publicContent';
+import { SkillCategory, SKILL_CATEGORIES, getSkillIcon } from '../lib/skillIcons';
 
 export const Home: React.FC = () => {
   const { language, t } = useLanguage();
@@ -214,64 +211,18 @@ export const Home: React.FC = () => {
       <section className="container mx-auto px-4 bg-secondary/30 py-14 rounded-3xl">
         <h2 className="text-3xl font-bold text-center mb-10">{t.skills.title}</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-7">
-            
-          {/* FRONTEND */}
-          <SkillCard 
-            title={t.skills.frontend} 
-            icon={<Code2 />} 
-            skills={[
-              { name: "HTML5", icon: <FileCode2 className="w-4 h-4" /> },
-              { name: "CSS3", icon: <Palette className="w-4 h-4" /> },
-              { name: "React.js", icon: <Atom className="w-4 h-4" /> },
-              { name: "Next.js", icon: <Zap className="w-4 h-4" /> },
-              { name: "Vue.js", icon: <Layers className="w-4 h-4" /> },   // nouveau
-              { name: "Tailwind CSS", icon: <Wind className="w-4 h-4" /> },
-              { name: "TypeScript", icon: <Braces className="w-4 h-4" /> }
-            ]} 
-          />
-
-          {/* BACKEND */}
-          <SkillCard 
-            title={t.skills.backend} 
-            icon={<Server />} 
-            skills={[
-              { name: "Node.js", icon: <Hexagon className="w-4 h-4" /> },
-              { name: "NestJS", icon: <Layers className="w-4 h-4" /> },
-              { name: "PHP", icon: <FileJson className="w-4 h-4" /> },
-              { name: "Laravel", icon: <Layers className="w-4 h-4" /> }, // nouveau
-              { name: "Python", icon: <Code2 className="w-4 h-4" /> },    // nouveau
-              { name: "Express", icon: <Workflow className="w-4 h-4" /> },
-              { name: "API REST", icon: <Globe className="w-4 h-4" /> }
-            ]} 
-          />
-
-          {/* DATABASE */}
-          <SkillCard 
-            title={t.skills.db} 
-            icon={<Database />} 
-            skills={[
-              // { name: "PostgreSQL", icon: <Database className="w-4 h-4" /> },
-              { name: "MySQL", icon: <Table className="w-4 h-4" /> },
-              { name: "MongoDB", icon: <FileJson className="w-4 h-4" /> },
-              { name: "Prisma", icon: <Triangle className="w-4 h-4" /> }
-            ]} 
-          />
-
-          {/* TOOLS & CMS */}
-          <SkillCard 
-            title={t.skills.tools} 
-            icon={<Terminal />} 
-            skills={[
-              { name: "Git", icon: <GitBranch className="w-4 h-4" /> },
-              { name: "Docker", icon: <Container className="w-4 h-4" /> },
-              { name: "Linux", icon: <Command className="w-4 h-4" /> },
-              { name: "Postman", icon: <Send className="w-4 h-4" /> },
-              { name: "Vercel", icon: <Triangle className="w-4 h-4 rotate-180" /> },
-              { name: "WordPress", icon: <Globe className="w-4 h-4" /> },  // nouveau
-              { name: "API", icon: <Globe className="w-4 h-4" /> }          // nouveau
-            ]} 
-          />
-          
+          {SKILL_CATEGORIES.map((category) => {
+            const dbForCategory = (publicContent?.skills || []).filter((s) => s.category === category).map((s) => s.name);
+            const names = dbForCategory.length > 0 ? dbForCategory : FALLBACK_SKILLS[category];
+            return (
+              <SkillCard
+                key={category}
+                title={CATEGORY_TITLES(t)[category]}
+                icon={CATEGORY_ICONS[category]}
+                skills={names}
+              />
+            );
+          })}
         </div>
       </section>
 
@@ -279,7 +230,28 @@ export const Home: React.FC = () => {
   );
 };
 
-const SkillCard: React.FC<{title: string, icon: React.ReactNode, skills: {name: string, icon: React.ReactNode}[]}> = ({title, icon, skills}) => (
+const FALLBACK_SKILLS: Record<SkillCategory, string[]> = {
+  frontend: ['HTML5', 'CSS3', 'React.js', 'Next.js', 'Vue.js', 'Tailwind CSS', 'TypeScript'],
+  backend: ['Node.js', 'NestJS', 'PHP', 'Laravel', 'Python', 'Express', 'API REST'],
+  database: ['MySQL', 'MongoDB', 'Prisma'],
+  tools: ['Git', 'Docker', 'Linux', 'Postman', 'Vercel', 'WordPress', 'API'],
+};
+
+const CATEGORY_ICONS: Record<SkillCategory, React.ReactNode> = {
+  frontend: <Code2 />,
+  backend: <Server />,
+  database: <Database />,
+  tools: <Terminal />,
+};
+
+const CATEGORY_TITLES = (t: { skills: { frontend: string; backend: string; db: string; tools: string } }): Record<SkillCategory, string> => ({
+  frontend: t.skills.frontend,
+  backend: t.skills.backend,
+  database: t.skills.db,
+  tools: t.skills.tools,
+});
+
+const SkillCard: React.FC<{title: string, icon: React.ReactNode, skills: string[]}> = ({title, icon, skills}) => (
     <div className="bg-background p-6 rounded-xl shadow-sm border border-border transition-shadow hover:shadow-md">
         <div className="flex items-center gap-3 mb-5 text-primary">
             <div className="p-2 bg-primary/10 rounded-lg">
@@ -288,12 +260,12 @@ const SkillCard: React.FC<{title: string, icon: React.ReactNode, skills: {name: 
             <h3 className="font-semibold text-lg text-foreground">{title}</h3>
         </div>
         <ul className="grid grid-cols-1 gap-2.5">
-            {skills.map(s => (
-                <li key={s.name} className="text-sm text-muted-foreground flex items-center gap-3 p-2 rounded-md hover:bg-secondary/50 transition-colors duration-150">
+            {skills.map(name => (
+                <li key={name} className="text-sm text-muted-foreground flex items-center gap-3 p-2 rounded-md hover:bg-secondary/50 transition-colors duration-150">
                     <div className="text-primary/80">
-                      {s.icon}
+                      {getSkillIcon(name)}
                     </div>
-                    <span className="font-medium">{s.name}</span>
+                    <span className="font-medium">{name}</span>
                 </li>
             ))}
         </ul>

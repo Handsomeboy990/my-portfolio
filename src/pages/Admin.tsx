@@ -24,11 +24,13 @@ import {
   BriefcaseBusiness,
   GraduationCap,
   Trash2,
+  Sigma,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { I18nText, emptyI18nText, parseI18nText, serializeI18nText } from '../lib/i18n';
+import { SkillCategory, SKILL_CATEGORIES, SKILL_CATEGORY_LABELS, getSkillIcon } from '../lib/skillIcons';
 
-type AdminSectionKey = 'overview' | 'profile' | 'experience' | 'education' | 'projects' | 'media' | 'seo';
+type AdminSectionKey = 'overview' | 'profile' | 'experience' | 'education' | 'projects' | 'skills' | 'media' | 'seo';
 
 type ConfirmationTone = 'primary' | 'danger';
 
@@ -37,15 +39,17 @@ type ConfirmationRequest = {
   description: string;
   confirmLabel: string;
   tone: ConfirmationTone;
-  action: 'save' | 'reset' | 'sign-out' | 'delete-experience' | 'delete-education' | 'delete-project';
+  action: 'save' | 'reset' | 'sign-out' | 'delete-experience' | 'delete-education' | 'delete-project' | 'delete-skill';
   index?: number;
+  category?: SkillCategory;
 };
 
-type DraggedItemType = 'experience' | 'education' | 'project';
+type DraggedItemType = 'experience' | 'education' | 'project' | 'skill';
 
 type DragState = {
   type: DraggedItemType;
   index: number;
+  category?: SkillCategory;
 } | null;
 
 type ExperienceDraft = {
@@ -76,6 +80,14 @@ type ProjectDraft = {
   repositoryUrl: string;
 };
 
+type SkillDraft = {
+  id?: string;
+  name: string;
+  isPublished?: boolean;
+};
+
+type SkillsDraft = Record<SkillCategory, SkillDraft[]>;
+
 type AdminDraft = {
   profile: {
     title: string;
@@ -89,6 +101,7 @@ type AdminDraft = {
   experience: ExperienceDraft[];
   education: EducationDraft[];
   projects: ProjectDraft[];
+  skills: SkillsDraft;
   media: {
     cvPathFr: string;
     cvPathEn: string;
@@ -163,6 +176,14 @@ type SupabaseSettingsRow = {
   updated_at: string | null;
 };
 
+type SupabaseSkillRow = {
+  id: string;
+  category: string;
+  name: string;
+  sort_order: number | null;
+  is_published: boolean | null;
+};
+
 const STORAGE_KEY = 'portfolio-admin-draft';
 
 const defaultDraft: AdminDraft = {
@@ -203,6 +224,12 @@ const defaultDraft: AdminDraft = {
       repositoryUrl: '',
     },
   ],
+  skills: {
+    frontend: [],
+    backend: [],
+    database: [],
+    tools: [],
+  },
   media: {
     cvPathFr: '/storage/cv/lauret-chacha.pdf',
     cvPathEn: '/storage/cv/lauret-chacha.pdf',
@@ -222,9 +249,20 @@ const sections: Array<{ key: AdminSectionKey; label: string; icon: LucideIcon }>
   { key: 'experience', label: 'Expériences', icon: BriefcaseBusiness },
   { key: 'education', label: 'Formations et certificats', icon: GraduationCap },
   { key: 'projects', label: 'Projets', icon: FolderOpen },
+  { key: 'skills', label: 'Compétences techniques', icon: Sigma },
   { key: 'media', label: 'Médias', icon: Image },
   { key: 'seo', label: 'SEO', icon: Globe },
 ];
+
+const emptySkillsDraft = (): SkillsDraft => ({
+  frontend: [],
+  backend: [],
+  database: [],
+  tools: [],
+});
+
+const isSkillCategory = (value: unknown): value is SkillCategory =>
+  value === 'frontend' || value === 'backend' || value === 'database' || value === 'tools';
 
 const toI18nValue = (value: unknown, fallback: I18nText): I18nText => {
   if (typeof value === 'string') {
@@ -289,6 +327,23 @@ const migrateDraft = (raw: unknown): AdminDraft => {
           repositoryUrl: typeof item?.repositoryUrl === 'string' ? item.repositoryUrl : '',
         }))
       : defaultDraft.projects,
+    skills: (() => {
+      const next = emptySkillsDraft();
+      const src = source.skills && typeof source.skills === 'object' ? (source.skills as Record<string, unknown>) : null;
+      if (src) {
+        SKILL_CATEGORIES.forEach((category) => {
+          const arr = src[category];
+          if (Array.isArray(arr)) {
+            next[category] = arr.map((item: any) => ({
+              id: typeof item?.id === 'string' ? item.id : undefined,
+              name: typeof item?.name === 'string' ? item.name : '',
+              isPublished: item?.isPublished !== false,
+            }));
+          }
+        });
+      }
+      return next;
+    })(),
     media: {
       cvPathFr: typeof mediaSrc.cvPathFr === 'string' ? mediaSrc.cvPathFr : defaultDraft.media.cvPathFr,
       cvPathEn: typeof mediaSrc.cvPathEn === 'string' ? mediaSrc.cvPathEn : defaultDraft.media.cvPathEn,
@@ -542,6 +597,19 @@ const mapProjectsToDraft = (rows: SupabaseProjectRow[], fallback: AdminDraft): A
   }));
 };
 
+const mapSkillsToDraft = (rows: SupabaseSkillRow[]): SkillsDraft => {
+  const next = emptySkillsDraft();
+  rows.forEach((row) => {
+    if (!isSkillCategory(row.category)) return;
+    next[row.category].push({
+      id: row.id,
+      name: row.name,
+      isPublished: row.is_published !== false,
+    });
+  });
+  return next;
+};
+
 const Field: React.FC<{ label: string; children: React.ReactNode; hint?: string }> = ({ label, children, hint }) => (
   <label className="space-y-2 block">
     <div className="flex items-center justify-between gap-3">
@@ -739,21 +807,23 @@ export const Admin: React.FC = () => {
     setRemoteLoading(true);
     setSaveError('');
 
-    const [profileResult, experiencesResult, educationsResult, projectsResult, settingsResult] = await Promise.all([
+    const [profileResult, experiencesResult, educationsResult, projectsResult, settingsResult, skillsResult] = await Promise.all([
       supabase.from('profile').select('*').order('updated_at', { ascending: false }).limit(1).maybeSingle(),
       supabase.from('experiences').select('*').order('sort_order', { ascending: true }),
       supabase.from('educations').select('*').order('sort_order', { ascending: true }),
       supabase.from('projects').select('*').order('sort_order', { ascending: true }),
       supabase.from('site_settings').select('*').order('updated_at', { ascending: false }).limit(1).maybeSingle(),
+      supabase.from('skills').select('*').order('category', { ascending: true }).order('sort_order', { ascending: true }),
     ]);
 
-    if (profileResult.error || experiencesResult.error || educationsResult.error || projectsResult.error || settingsResult.error) {
+    if (profileResult.error || experiencesResult.error || educationsResult.error || projectsResult.error || settingsResult.error || skillsResult.error) {
       setSaveError(
         profileResult.error?.message ||
           experiencesResult.error?.message ||
           educationsResult.error?.message ||
           projectsResult.error?.message ||
           settingsResult.error?.message ||
+          skillsResult.error?.message ||
           'Erreur lors du chargement des contenus'
       );
       setRemoteLoading(false);
@@ -765,6 +835,7 @@ export const Admin: React.FC = () => {
     const experiencesRows = (experiencesResult.data || []) as SupabaseExperienceRow[];
     const educationsRows = (educationsResult.data || []) as SupabaseEducationRow[];
     const projectsRows = (projectsResult.data || []) as SupabaseProjectRow[];
+    const skillsRows = (skillsResult.data || []) as SupabaseSkillRow[];
 
     setDraft((currentDraft) => ({
       ...currentDraft,
@@ -772,10 +843,11 @@ export const Admin: React.FC = () => {
       experience: mapExperiencesToDraft(experiencesRows, currentDraft),
       education: mapEducationsToDraft(educationsRows, currentDraft),
       projects: mapProjectsToDraft(projectsRows, currentDraft),
+      skills: mapSkillsToDraft(skillsRows),
       seo: {
         siteName: settingsRow?.site_name || currentDraft.seo.siteName,
-        metaTitle: settingsRow?.seo_title || currentDraft.seo.metaTitle,
-        metaDescription: settingsRow?.seo_description || currentDraft.seo.metaDescription,
+        metaTitle: settingsRow?.seo_title ? parseI18nText(settingsRow.seo_title) : currentDraft.seo.metaTitle,
+        metaDescription: settingsRow?.seo_description ? parseI18nText(settingsRow.seo_description) : currentDraft.seo.metaDescription,
       },
     }));
 
@@ -978,6 +1050,47 @@ export const Admin: React.FC = () => {
 
     if (projectSlugsToDelete.length) {
       const deleteResult = await supabase.from('projects').delete().in('slug', projectSlugsToDelete);
+      if (deleteResult.error) throw new Error(deleteResult.error.message);
+    }
+
+    const skillsExisting = await supabase.from('skills').select('id');
+    if (skillsExisting.error) throw new Error(skillsExisting.error.message);
+    const existingSkillIds = new Set(((skillsExisting.data || []) as Array<{ id: string }>).map((row) => row.id));
+
+    const draftSkillIds = new Set<string>();
+    SKILL_CATEGORIES.forEach((category) => {
+      currentDraft.skills[category].forEach((item) => {
+        if (item.id) draftSkillIds.add(item.id);
+      });
+    });
+    const skillIdsToDelete = [...existingSkillIds].filter((id) => !draftSkillIds.has(id));
+
+    for (const category of SKILL_CATEGORIES) {
+      const items = currentDraft.skills[category];
+      for (let index = 0; index < items.length; index += 1) {
+        const item = items[index];
+        const trimmed = item.name.trim();
+        if (!trimmed) continue;
+
+        const payload = {
+          category,
+          name: trimmed,
+          sort_order: index,
+          is_published: item.isPublished !== false,
+        };
+
+        if (item.id && existingSkillIds.has(item.id)) {
+          const skillUpdate = await supabase.from('skills').update(payload).eq('id', item.id);
+          if (skillUpdate.error) throw new Error(skillUpdate.error.message);
+        } else {
+          const skillInsert = await supabase.from('skills').insert(payload);
+          if (skillInsert.error) throw new Error(skillInsert.error.message);
+        }
+      }
+    }
+
+    if (skillIdsToDelete.length) {
+      const deleteResult = await supabase.from('skills').delete().in('id', skillIdsToDelete);
       if (deleteResult.error) throw new Error(deleteResult.error.message);
     }
   };
@@ -1243,6 +1356,17 @@ export const Admin: React.FC = () => {
       reorderProjectUploads(dragState.index, index);
     }
 
+    if (type === 'skill' && dragState.category) {
+      const category = dragState.category;
+      setDraft((currentDraft) => ({
+        ...currentDraft,
+        skills: {
+          ...currentDraft.skills,
+          [category]: reorderItems(currentDraft.skills[category], dragState.index, index),
+        },
+      }));
+    }
+
     setDragState(null);
   };
 
@@ -1318,6 +1442,48 @@ export const Admin: React.FC = () => {
     });
   };
 
+  const addSkill = (category: SkillCategory) => {
+    setDraft((currentDraft) => ({
+      ...currentDraft,
+      skills: {
+        ...currentDraft.skills,
+        [category]: [...currentDraft.skills[category], { name: '', isPublished: true }],
+      },
+    }));
+  };
+
+  const removeSkill = (category: SkillCategory, index: number) => {
+    setDraft((currentDraft) => ({
+      ...currentDraft,
+      skills: {
+        ...currentDraft.skills,
+        [category]: currentDraft.skills[category].filter((_, itemIndex) => itemIndex !== index),
+      },
+    }));
+  };
+
+  const updateSkillName = (category: SkillCategory, index: number, name: string) => {
+    setDraft((currentDraft) => {
+      const next = [...currentDraft.skills[category]];
+      next[index] = { ...next[index], name };
+      return {
+        ...currentDraft,
+        skills: { ...currentDraft.skills, [category]: next },
+      };
+    });
+  };
+
+  const toggleSkillPublished = (category: SkillCategory, index: number) => {
+    setDraft((currentDraft) => {
+      const next = [...currentDraft.skills[category]];
+      next[index] = { ...next[index], isPublished: !next[index].isPublished };
+      return {
+        ...currentDraft,
+        skills: { ...currentDraft.skills, [category]: next },
+      };
+    });
+  };
+
   const requestConfirmation = (request: ConfirmationRequest) => {
     setConfirmationRequest(request);
   };
@@ -1361,6 +1527,11 @@ export const Admin: React.FC = () => {
 
     if (request.action === 'delete-project' && request.index !== undefined) {
       removeProject(request.index);
+      return;
+    }
+
+    if (request.action === 'delete-skill' && request.index !== undefined && request.category) {
+      removeSkill(request.category, request.index);
     }
   };
 
@@ -1922,6 +2093,79 @@ export const Admin: React.FC = () => {
                     </div>
                   ))}
                 </div>
+              </SectionPanel>
+            )}
+
+            {activeSection === 'skills' && (
+              <SectionPanel title="Compétences techniques" description="Listes affichées sur la page d'accueil. L'icône est choisie automatiquement à partir du nom." icon={Sigma}>
+                <div className="grid gap-4 md:grid-cols-2">
+                  {SKILL_CATEGORIES.map((category) => (
+                    <div key={category} className="rounded-2xl border border-border p-4">
+                      <div className="mb-3 flex items-center justify-between gap-3">
+                        <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-muted-foreground">{SKILL_CATEGORY_LABELS[category]}</h3>
+                        <Button type="button" variant="outline" size="sm" className="gap-2" onClick={() => addSkill(category)}>
+                          <Plus className="h-3.5 w-3.5" /> Ajouter
+                        </Button>
+                      </div>
+                      <div className="space-y-2">
+                        {draft.skills[category].length === 0 ? (
+                          <p className="rounded-xl border border-dashed border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+                            Aucune compétence dans cette catégorie.
+                          </p>
+                        ) : null}
+                        {draft.skills[category].map((item, index) => (
+                          <div
+                            key={item.id || `${category}-${index}`}
+                            draggable
+                            onDragStart={() => setDragState({ type: 'skill', index, category })}
+                            onDragEnd={handleDragEnd}
+                            onDragOver={handleDragOver}
+                            onDrop={() => handleDrop('skill', index)}
+                            className={`flex items-center gap-2 rounded-xl border p-2 transition-all ${dragState && dragState.type === 'skill' && dragState.category === category && dragState.index === index ? 'border-primary bg-primary/5 shadow-md' : 'border-border bg-background'}`}
+                          >
+                            <span className="cursor-grab p-1 text-muted-foreground">
+                              <GripVertical className="h-4 w-4" />
+                            </span>
+                            <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 text-primary">
+                              {getSkillIcon(item.name)}
+                            </span>
+                            <TextInput
+                              value={item.name}
+                              placeholder="Nom (ex: React, Node.js, Docker)"
+                              onChange={(event) => updateSkillName(category, index, event.target.value)}
+                              className="!py-2 !px-3 text-sm"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => toggleSkillPublished(category, index)}
+                              className={`shrink-0 rounded-full px-2.5 py-1 text-xs ${item.isPublished !== false ? 'bg-green-100 text-green-700' : 'bg-muted/30 text-muted-foreground'}`}
+                            >
+                              {item.isPublished !== false ? 'Publié' : 'Brouillon'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => requestConfirmation({
+                                title: 'Supprimer cette compétence',
+                                description: `"${item.name || 'Sans nom'}" sera retirée lors de l'enregistrement.`,
+                                confirmLabel: 'Supprimer',
+                                tone: 'danger',
+                                action: 'delete-skill',
+                                index,
+                                category,
+                              })}
+                              className="shrink-0 rounded-md p-1.5 text-muted-foreground hover:bg-red-50 hover:text-red-600"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <p className="mt-4 rounded-xl border border-dashed border-border bg-muted/20 px-4 py-3 text-xs text-muted-foreground">
+                  Astuce : l'icône est devinée à partir du nom (React, Docker, Tailwind, etc.). Les noms inconnus reçoivent une icône générique.
+                </p>
               </SectionPanel>
             )}
 
