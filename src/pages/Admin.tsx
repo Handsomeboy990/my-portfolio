@@ -435,11 +435,16 @@ const formatTimestampForUI = (value: string | null | undefined): string => {
   }
 };
 
+const isMissingTableError = (message: string): boolean => {
+  const lower = message.toLowerCase();
+  return lower.includes('schema cache') || lower.includes('could not find the table') || (lower.includes('relation') && lower.includes('does not exist'));
+};
+
 const formatSaveError = (message: string): string => {
   const lowerMessage = message.toLowerCase();
 
-  if (lowerMessage.includes('does not exist') && lowerMessage.includes('relation')) {
-    return `Table absente côté Supabase: ${message}. Applique le script supabase/rls-policies.sql pour créer la table manquante (en particulier "public.skills" qui est récente).`;
+  if (isMissingTableError(message)) {
+    return `Table introuvable côté Supabase: ${message}. Soit la table n'existe pas (applique supabase/rls-policies.sql), soit PostgREST n'a pas rechargé son cache de schéma. Dashboard Supabase > API Docs > bouton "Reload schema" (ou attends ~30s), puis réessaie.`;
   }
 
   if (lowerMessage.includes('row-level security') || lowerMessage.includes('violates row-level security') || lowerMessage.includes('rls')) {
@@ -821,7 +826,10 @@ export const Admin: React.FC = () => {
       supabase.from('skills').select('*').order('category', { ascending: true }).order('sort_order', { ascending: true }),
     ]);
 
-    if (profileResult.error || experiencesResult.error || educationsResult.error || projectsResult.error || settingsResult.error || skillsResult.error) {
+    const skillsTableMissing = !!skillsResult.error && isMissingTableError(skillsResult.error.message);
+    const blockingError = profileResult.error || experiencesResult.error || educationsResult.error || projectsResult.error || settingsResult.error || (skillsResult.error && !skillsTableMissing);
+
+    if (blockingError) {
       setSaveError(
         profileResult.error?.message ||
           experiencesResult.error?.message ||
@@ -835,12 +843,16 @@ export const Admin: React.FC = () => {
       return;
     }
 
+    if (skillsTableMissing) {
+      setSaveError('Table public.skills introuvable: applique supabase/rls-policies.sql puis "Reload schema" dans Supabase Dashboard > API.');
+    }
+
     const profileRow = profileResult.data as SupabaseProfileRow | null;
     const settingsRow = settingsResult.data as SupabaseSettingsRow | null;
     const experiencesRows = (experiencesResult.data || []) as SupabaseExperienceRow[];
     const educationsRows = (educationsResult.data || []) as SupabaseEducationRow[];
     const projectsRows = (projectsResult.data || []) as SupabaseProjectRow[];
-    const skillsRows = (skillsResult.data || []) as SupabaseSkillRow[];
+    const skillsRows = (skillsResult.error ? [] : skillsResult.data || []) as SupabaseSkillRow[];
 
     setDraft((currentDraft) => ({
       ...currentDraft,
@@ -848,7 +860,7 @@ export const Admin: React.FC = () => {
       experience: mapExperiencesToDraft(experiencesRows, currentDraft),
       education: mapEducationsToDraft(educationsRows, currentDraft),
       projects: mapProjectsToDraft(projectsRows, currentDraft),
-      skills: mapSkillsToDraft(skillsRows),
+      skills: skillsTableMissing ? currentDraft.skills : mapSkillsToDraft(skillsRows),
       seo: {
         siteName: settingsRow?.site_name || currentDraft.seo.siteName,
         metaTitle: settingsRow?.seo_title ? parseI18nText(settingsRow.seo_title) : currentDraft.seo.metaTitle,
@@ -1059,7 +1071,13 @@ export const Admin: React.FC = () => {
     }
 
     const skillsExisting = await supabase.from('skills').select('id');
-    if (skillsExisting.error) throw new Error(`[skills:select] ${skillsExisting.error.message}`);
+    if (skillsExisting.error) {
+      if (isMissingTableError(skillsExisting.error.message)) {
+        setSaveMessage('Sauvegarde OK (la table public.skills est introuvable — applique le SQL ou recharge le schéma Supabase pour activer la section Compétences).');
+        return;
+      }
+      throw new Error(`[skills:select] ${skillsExisting.error.message}`);
+    }
     const existingSkillIds = new Set(((skillsExisting.data || []) as Array<{ id: string }>).map((row) => row.id));
 
     const draftSkillIds = new Set<string>();
