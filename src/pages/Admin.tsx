@@ -438,12 +438,17 @@ const formatTimestampForUI = (value: string | null | undefined): string => {
 const formatSaveError = (message: string): string => {
   const lowerMessage = message.toLowerCase();
 
+  if (lowerMessage.includes('does not exist') && lowerMessage.includes('relation')) {
+    return `Table absente côté Supabase: ${message}. Applique le script supabase/rls-policies.sql pour créer la table manquante (en particulier "public.skills" qui est récente).`;
+  }
+
   if (lowerMessage.includes('row-level security') || lowerMessage.includes('violates row-level security') || lowerMessage.includes('rls')) {
-    return 'Enregistrement refusé par Supabase: les politiques RLS bloquent cette écriture. Vérifie que le compte admin a bien les politiques INSERT/UPDATE/DELETE sur profile, experiences, educations, projects et site_settings.';
+    return `Enregistrement refusé par Supabase (RLS): ${message}. Vérifie que le compte admin a bien les policies INSERT/UPDATE/DELETE sur profile, experiences, educations, projects, site_settings ET skills. Si tu viens d'ajouter la table skills, rejoue supabase/rls-policies.sql en entier.`;
   }
 
   return message;
 };
+
 
 const parseCvPaths = (value: string | null): { fr: string; en: string } => {
   if (!value) {
@@ -871,7 +876,7 @@ export const Admin: React.FC = () => {
         contentType: uploadedAvatar.type,
       });
 
-      if (avatarResult.error) throw new Error(avatarResult.error.message);
+      if (avatarResult.error) throw new Error(`[storage:avatar] ${avatarResult.error.message}`);
       profilePayload.avatar_path = supabase.storage.from('projects-images').getPublicUrl(avatarPath).data.publicUrl;
     }
 
@@ -883,7 +888,7 @@ export const Admin: React.FC = () => {
         contentType: cvUploadFr.type,
       });
 
-      if (cvResult.error) throw new Error(cvResult.error.message);
+      if (cvResult.error) throw new Error(`[storage:cv-fr] ${cvResult.error.message}`);
       const nextCvPaths = parseCvPaths(profilePayload.cv_path);
       profilePayload.cv_path = serializeCvPaths({
         fr: supabase.storage.from('cv').getPublicUrl(cvPath).data.publicUrl,
@@ -899,7 +904,7 @@ export const Admin: React.FC = () => {
         contentType: cvUploadEn.type,
       });
 
-      if (cvResult.error) throw new Error(cvResult.error.message);
+      if (cvResult.error) throw new Error(`[storage:cv-en] ${cvResult.error.message}`);
       const nextCvPaths = parseCvPaths(profilePayload.cv_path);
       profilePayload.cv_path = serializeCvPaths({
         fr: nextCvPaths.fr,
@@ -909,28 +914,28 @@ export const Admin: React.FC = () => {
     const settingsPayload = buildSettingsPayload(currentDraft);
 
     const profileRow = await supabase.from('profile').select('id').limit(1).maybeSingle();
-    if (profileRow.error) throw new Error(profileRow.error.message);
+    if (profileRow.error) throw new Error(`[profile:select] ${profileRow.error.message}`);
 
     if (profileRow.data && profileRow.data.id) {
       const profileUpdate = await supabase.from('profile').update(profilePayload).eq('id', profileRow.data.id);
-      if (profileUpdate.error) throw new Error(profileUpdate.error.message);
+      if (profileUpdate.error) throw new Error(`[profile:update] ${profileUpdate.error.message}`);
     } else {
       const profileInsert = await supabase.from('profile').insert(profilePayload);
-      if (profileInsert.error) throw new Error(profileInsert.error.message);
+      if (profileInsert.error) throw new Error(`[profile:insert] ${profileInsert.error.message}`);
     }
 
     const settingsRow = await supabase.from('site_settings').select('id').limit(1).maybeSingle();
-    if (settingsRow.error) throw new Error(settingsRow.error.message);
+    if (settingsRow.error) throw new Error(`[site_settings:select] ${settingsRow.error.message}`);
     if (settingsRow.data && settingsRow.data.id) {
       const settingsUpdate = await supabase.from('site_settings').update(settingsPayload).eq('id', settingsRow.data.id);
-      if (settingsUpdate.error) throw new Error(settingsUpdate.error.message);
+      if (settingsUpdate.error) throw new Error(`[site_settings:update] ${settingsUpdate.error.message}`);
     } else {
       const settingsInsert = await supabase.from('site_settings').insert(settingsPayload);
-      if (settingsInsert.error) throw new Error(settingsInsert.error.message);
+      if (settingsInsert.error) throw new Error(`[site_settings:insert] ${settingsInsert.error.message}`);
     }
 
     const experiencesExisting = await supabase.from('experiences').select('id');
-    if (experiencesExisting.error) throw new Error(experiencesExisting.error.message);
+    if (experiencesExisting.error) throw new Error(`[experiences:select] ${experiencesExisting.error.message}`);
     const existingExperienceIds = new Set(((experiencesExisting.data || []) as Array<{ id: string }>).map((row) => row.id));
     const draftExperienceIds = new Set(currentDraft.experience.map((item) => item.id).filter((id): id is string => Boolean(id)));
     const experienceIdsToDelete = [...existingExperienceIds].filter((id) => !draftExperienceIds.has(id));
@@ -950,20 +955,20 @@ export const Admin: React.FC = () => {
 
       if (item.id && existingExperienceIds.has(item.id)) {
         const experienceUpdate = await supabase.from('experiences').update(payload).eq('id', item.id);
-        if (experienceUpdate.error) throw new Error(experienceUpdate.error.message);
+        if (experienceUpdate.error) throw new Error(`[experiences:update] ${experienceUpdate.error.message}`);
       } else {
         const experienceInsert = await supabase.from('experiences').insert(payload);
-        if (experienceInsert.error) throw new Error(experienceInsert.error.message);
+        if (experienceInsert.error) throw new Error(`[experiences:insert] ${experienceInsert.error.message}`);
       }
     }
 
     if (experienceIdsToDelete.length) {
       const deleteResult = await supabase.from('experiences').delete().in('id', experienceIdsToDelete);
-      if (deleteResult.error) throw new Error(deleteResult.error.message);
+      if (deleteResult.error) throw new Error(`[experiences:delete] ${deleteResult.error.message}`);
     }
 
     const educationsExisting = await supabase.from('educations').select('id');
-    if (educationsExisting.error) throw new Error(educationsExisting.error.message);
+    if (educationsExisting.error) throw new Error(`[educations:select] ${educationsExisting.error.message}`);
     const existingEducationIds = new Set(((educationsExisting.data || []) as Array<{ id: string }>).map((row) => row.id));
     const draftEducationIds = new Set(currentDraft.education.map((item) => item.id).filter((id): id is string => Boolean(id)));
     const educationIdsToDelete = [...existingEducationIds].filter((id) => !draftEducationIds.has(id));
@@ -984,16 +989,16 @@ export const Admin: React.FC = () => {
 
       if (item.id && existingEducationIds.has(item.id)) {
         const educationUpdate = await supabase.from('educations').update(payload).eq('id', item.id);
-        if (educationUpdate.error) throw new Error(educationUpdate.error.message);
+        if (educationUpdate.error) throw new Error(`[educations:update] ${educationUpdate.error.message}`);
       } else {
         const educationInsert = await supabase.from('educations').insert(payload);
-        if (educationInsert.error) throw new Error(educationInsert.error.message);
+        if (educationInsert.error) throw new Error(`[educations:insert] ${educationInsert.error.message}`);
       }
     }
 
     if (educationIdsToDelete.length) {
       const deleteResult = await supabase.from('educations').delete().in('id', educationIdsToDelete);
-      if (deleteResult.error) throw new Error(deleteResult.error.message);
+      if (deleteResult.error) throw new Error(`[educations:delete] ${deleteResult.error.message}`);
     }
 
     const projectsPayload = currentDraft.projects.map((item, index) => {
@@ -1025,7 +1030,7 @@ export const Admin: React.FC = () => {
           .from('projects-images')
           .upload(filePath, selectedFile, { upsert: true, contentType: selectedFile.type });
 
-        if (uploadResult.error) throw new Error(uploadResult.error.message);
+        if (uploadResult.error) throw new Error(`[storage:projects-images] ${uploadResult.error.message}`);
 
         return supabase.storage.from('projects-images').getPublicUrl(filePath).data.publicUrl;
       })
@@ -1038,11 +1043,11 @@ export const Admin: React.FC = () => {
 
     if (projectsPayloadWithUploads.length) {
       const projectsUpsert = await supabase.from('projects').upsert(projectsPayloadWithUploads, { onConflict: 'slug' });
-      if (projectsUpsert.error) throw new Error(projectsUpsert.error.message);
+      if (projectsUpsert.error) throw new Error(`[projects:upsert] ${projectsUpsert.error.message}`);
     }
 
     const existingProjects = await supabase.from('projects').select('slug');
-    if (existingProjects.error) throw new Error(existingProjects.error.message);
+    if (existingProjects.error) throw new Error(`[projects:select] ${existingProjects.error.message}`);
     const currentProjectSlugs = projectsPayloadWithUploads.map((item) => item.slug);
     const projectSlugsToDelete = (existingProjects.data || [])
       .map((row) => row.slug)
@@ -1050,11 +1055,11 @@ export const Admin: React.FC = () => {
 
     if (projectSlugsToDelete.length) {
       const deleteResult = await supabase.from('projects').delete().in('slug', projectSlugsToDelete);
-      if (deleteResult.error) throw new Error(deleteResult.error.message);
+      if (deleteResult.error) throw new Error(`[projects:delete] ${deleteResult.error.message}`);
     }
 
     const skillsExisting = await supabase.from('skills').select('id');
-    if (skillsExisting.error) throw new Error(skillsExisting.error.message);
+    if (skillsExisting.error) throw new Error(`[skills:select] ${skillsExisting.error.message}`);
     const existingSkillIds = new Set(((skillsExisting.data || []) as Array<{ id: string }>).map((row) => row.id));
 
     const draftSkillIds = new Set<string>();
@@ -1081,17 +1086,17 @@ export const Admin: React.FC = () => {
 
         if (item.id && existingSkillIds.has(item.id)) {
           const skillUpdate = await supabase.from('skills').update(payload).eq('id', item.id);
-          if (skillUpdate.error) throw new Error(skillUpdate.error.message);
+          if (skillUpdate.error) throw new Error(`[skills:update] ${skillUpdate.error.message}`);
         } else {
           const skillInsert = await supabase.from('skills').insert(payload);
-          if (skillInsert.error) throw new Error(skillInsert.error.message);
+          if (skillInsert.error) throw new Error(`[skills:insert] ${skillInsert.error.message}`);
         }
       }
     }
 
     if (skillIdsToDelete.length) {
       const deleteResult = await supabase.from('skills').delete().in('id', skillIdsToDelete);
-      if (deleteResult.error) throw new Error(deleteResult.error.message);
+      if (deleteResult.error) throw new Error(`[skills:delete] ${deleteResult.error.message}`);
     }
   };
 
